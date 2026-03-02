@@ -7,7 +7,7 @@ import { AppService } from './app.service';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [configuration],
+      load: [],
     }),
   ],
   controllers: [AppController],
