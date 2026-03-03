@@ -1,13 +1,24 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import express from 'express';
+import * as admin from 'firebase-admin';
+import * as functions from 'firebase-functions';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
-import configService from './config/config.service';
 
-const origins = process.env.ORIGINS?.split(',') ?? [];
+admin.initializeApp();
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const origins = process.env.CORS_ORIGIN?.split(',') || [];
+
+const server = express();
+
+export const createNestServer = async (expressInstance: express.Express) => {
+  const app = await NestFactory.create(
+    AppModule,
+    new ExpressAdapter(expressInstance),
+  );
+
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   app.useGlobalPipes(
     new ValidationPipe({
@@ -17,19 +28,25 @@ async function bootstrap() {
     }),
   );
   app.use(helmet());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
   app.enableCors({
-    origin: (
-      origin: string,
-      callback: (err: Error | null, success: boolean) => void,
-    ) => {
-      if (origins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'), false);
-      }
-    },
+    origin: origins,
+    methods: 'GET,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  await app.listen(configService().port ?? 3000);
-}
-bootstrap();
+
+  await app.init();
+};
+
+createNestServer(server)
+  .then(() => console.log('Nest Ready'))
+  .catch((err) => console.error('Nest broken', err));
+
+export const api = functions.https.onRequest(server);
