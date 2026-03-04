@@ -12,9 +12,9 @@ export class UserController {
     return this.userService.getUser(id);
   }
 
-  @Delete(':id')
+  @Delete('')
   @UseGuards(AuthGuard)
-  deleteUser(@Req() req: Request & { user: ReqUser }, @Param('id') id: string) {
-    return this.userService.deleteUser(req.user.uid, id);
+  deleteUser(@Req() req: ReqUser) {
+    return this.userService.deleteUser(req.user.uid);
   }
 }

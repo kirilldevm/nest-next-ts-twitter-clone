@@ -3,5 +3,5 @@ export declare class CreateUserDto {
     password: string;
     firstName: string;
     lastName: string;
-    profileImageUrl?: string;
+    profileImageUrl?: string | null;
 }

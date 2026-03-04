@@ -53,16 +53,27 @@ let AuthService = class AuthService {
     }
     async signup(createUserDto) {
         const { email, password, firstName, lastName, profileImageUrl } = createUserDto;
+        const createUserOptions = {
+            email,
+            password,
+            displayName: `${firstName} ${lastName}`,
+        };
+        const trimmedPhoto = typeof profileImageUrl === 'string' && profileImageUrl.trim() !== ''
+            ? profileImageUrl.trim()
+            : null;
+        if (trimmedPhoto) {
+            try {
+                const parsed = new URL(trimmedPhoto);
+                if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                    createUserOptions.photoURL = trimmedPhoto;
+                }
+            }
+            catch {
+            }
+        }
         let userRecord;
         try {
-            userRecord = await admin.auth().createUser({
-                email,
-                password,
-                displayName: `${firstName} ${lastName}`,
-                photoURL: profileImageUrl && profileImageUrl.trim() !== ''
-                    ? profileImageUrl
-                    : undefined,
-            });
+            userRecord = await admin.auth().createUser(createUserOptions);
         }
         catch (err) {
             if (err instanceof Error && 'code' in err) {
@@ -82,13 +93,21 @@ let AuthService = class AuthService {
                 email: userRecord.email || '',
                 firstName,
                 lastName,
-                profileImageUrl: profileImageUrl || null,
+                photoURL: profileImageUrl && profileImageUrl.trim() !== ''
+                    ? profileImageUrl
+                    : null,
                 createdAt: new Date(),
                 emailVerified: false,
             });
+            const token = await admin.auth().createCustomToken(userRecord.uid);
+            const verificationLink = await admin
+                .auth()
+                .generateEmailVerificationLink(userRecord.email || '');
             return {
-                id: userRecord.uid,
-                email: userRecord.email || '',
+                success: true,
+                message: 'Verification email sent',
+                verificationLink,
+                token,
             };
         }
         catch (err) {
@@ -102,16 +121,20 @@ let AuthService = class AuthService {
                     throw new common_1.BadRequestException('Profile image must be a valid URL');
                 }
             }
-            throw new common_1.BadRequestException('Failed to create user');
+            throw err;
         }
     }
     async signin(signinDto) {
         const { token } = signinDto;
         const decodedToken = await admin.auth().verifyIdToken(token);
-        console.log(decodedToken);
         const userRecord = await admin.auth().getUser(decodedToken.uid);
-        console.log(userRecord);
-        return userRecord;
+        if (!userRecord.emailVerified) {
+            throw new common_1.UnauthorizedException('Email not verified');
+        }
+        return {
+            success: true,
+            message: 'Signin successful',
+        };
     }
 };
 exports.AuthService = AuthService;

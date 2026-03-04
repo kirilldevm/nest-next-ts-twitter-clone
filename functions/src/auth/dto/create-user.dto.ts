@@ -25,7 +25,7 @@ export class CreateUserDto {
   @IsNotEmpty()
   lastName!: string;
 
-  @IsUrl()
   @IsOptional()
-  profileImageUrl?: string;
+  @IsUrl({}, { message: 'Profile image must be a valid URL' })
+  profileImageUrl?: string | null;
 }

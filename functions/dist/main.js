@@ -45,7 +45,21 @@ const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
 const helmet_1 = __importDefault(require("helmet"));
 const app_module_1 = require("./app.module");
-admin.initializeApp();
+const projectId = process.env.PROJECT_ID;
+const clientEmail = process.env.CLIENT_EMAIL;
+const privateKey = process.env.PRIVATE_KEY;
+if (projectId && clientEmail && privateKey && !privateKey.startsWith('<')) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
+        }),
+    });
+}
+else {
+    admin.initializeApp();
+}
 const origins = process.env.CORS_ORIGIN?.split(',') || [];
 const server = (0, express_1.default)();
 const createNestServer = async (expressInstance) => {

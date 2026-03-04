@@ -7,7 +7,21 @@ import * as functions from 'firebase-functions';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 
-admin.initializeApp();
+const projectId = process.env.PROJECT_ID;
+const clientEmail = process.env.CLIENT_EMAIL;
+const privateKey = process.env.PRIVATE_KEY;
+
+if (projectId && clientEmail && privateKey && !privateKey.startsWith('<')) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey: privateKey.replace(/\\n/g, '\n'),
+    }),
+  });
+} else {
+  admin.initializeApp();
+}
 
 const origins = process.env.CORS_ORIGIN?.split(',') || [];
 

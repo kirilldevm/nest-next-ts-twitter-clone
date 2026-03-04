@@ -41,8 +41,8 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "lastName", void 0);
 __decorate([
-    (0, class_validator_1.IsUrl)(),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsUrl)({}, { message: 'Profile image must be a valid URL' }),
+    __metadata("design:type", Object)
 ], CreateUserDto.prototype, "profileImageUrl", void 0);
 //# sourceMappingURL=create-user.dto.js.map

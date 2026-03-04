@@ -6,7 +6,7 @@ class User {
     email;
     firstName;
     lastName;
-    profileImageUrl;
+    photoURL;
     createdAt;
     emailVerified;
 }

@@ -5,8 +5,13 @@ export declare class AuthService {
     private readonly userRepository;
     constructor(userRepository: UserRepository);
     signup(createUserDto: CreateUserDto): Promise<{
-        id: string;
-        email: string;
+        success: boolean;
+        message: string;
+        verificationLink: string;
+        token: string;
     }>;
-    signin(signinDto: SigninDto): Promise<import("firebase-admin/auth").UserRecord>;
+    signin(signinDto: SigninDto): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

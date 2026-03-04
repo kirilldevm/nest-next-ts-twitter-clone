@@ -2,31 +2,44 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { UserRepository } from 'src/user/repository/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SigninDto } from './dto/signin.dto';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly emailService: EmailService,
+  ) {}
 
   async signup(createUserDto: CreateUserDto) {
     const { email, password, firstName, lastName, profileImageUrl } =
       createUserDto;
 
+    const createUserOptions: admin.auth.CreateRequest = {
+      email,
+      password,
+      displayName: `${firstName} ${lastName}`,
+    };
+    const trimmedPhoto =
+      typeof profileImageUrl === 'string' && profileImageUrl.trim() !== ''
+        ? profileImageUrl.trim()
+        : null;
+    if (trimmedPhoto) {
+      const parsed = new URL(trimmedPhoto);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        createUserOptions.photoURL = trimmedPhoto;
+      }
+    }
+
     let userRecord: admin.auth.UserRecord;
     try {
-      userRecord = await admin.auth().createUser({
-        email,
-        password,
-        displayName: `${firstName} ${lastName}`,
-        photoURL:
-          profileImageUrl && profileImageUrl.trim() !== ''
-            ? profileImageUrl
-            : undefined,
-      });
+      userRecord = await admin.auth().createUser(createUserOptions);
     } catch (err) {
       if (err instanceof Error && 'code' in err) {
         const code = err.code as string;
@@ -46,17 +59,28 @@ export class AuthService {
         email: userRecord.email || '',
         firstName,
         lastName,
-        profileImageUrl: profileImageUrl || null,
+        photoURL:
+          profileImageUrl && profileImageUrl.trim() !== ''
+            ? profileImageUrl
+            : null,
         createdAt: new Date(),
         emailVerified: false,
       });
 
+      // Send verification email
+      try {
+        await this.emailService.sendVerificationLink(email, name);
+      } catch (emailError) {
+        throw new BadRequestException('Failed to send verification email');
+      }
+
       return {
-        id: userRecord.uid,
-        email: userRecord.email || '',
+        success: true,
+        message: 'User created successfully',
       };
     } catch (err) {
       await admin.auth().deleteUser(userRecord.uid);
+      await this.userRepository.deleteUser(userRecord.uid);
 
       if (err instanceof Error && 'code' in err) {
         const code = err.code as string;
@@ -67,7 +91,7 @@ export class AuthService {
           throw new BadRequestException('Profile image must be a valid URL');
         }
       }
-      throw new BadRequestException('Failed to create user');
+      throw err;
     }
   }
 
@@ -75,25 +99,15 @@ export class AuthService {
     const { token } = signinDto;
 
     const decodedToken = await admin.auth().verifyIdToken(token);
-    console.log(decodedToken);
-
     const userRecord = await admin.auth().getUser(decodedToken.uid);
-    console.log(userRecord);
 
-    return userRecord;
+    if (!userRecord.emailVerified) {
+      throw new UnauthorizedException('Email not verified');
+    }
 
-    // try {
-    //   const userRecord = await admin.auth().verifyIdToken(token);
-
-    //   console.log(userRecord);
-
-    //   const isPasswordValid = await admin.auth().getUser(userRecord.uid);
-    //   return isPasswordValid;
-    // } catch (error) {
-    //   if (error instanceof Error) {
-    //     throw new UnauthorizedException(error.message);
-    //   }
-    //   throw new UnauthorizedException('Invalid credentials');
-    // }
+    return {
+      success: true,
+      message: 'Signin successful',
+    };
   }
 }
