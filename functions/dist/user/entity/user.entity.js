@@ -8,7 +8,7 @@ class User {
     lastName;
     profileImageUrl;
     createdAt;
-    photo;
+    emailVerified;
 }
 exports.User = User;
 //# sourceMappingURL=user.entity.js.map

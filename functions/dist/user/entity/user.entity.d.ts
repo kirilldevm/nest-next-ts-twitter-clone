@@ -1,9 +1,9 @@
 export declare class User {
     id: string;
     email: string;
-    firstName: string;
-    lastName: string;
-    profileImageUrl: string | null;
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string | null;
     createdAt: Date;
-    photo?: string;
+    emailVerified?: boolean;
 }

@@ -39,40 +39,28 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserRepository = void 0;
+exports.AuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
-let UserRepository = class UserRepository {
-    usersDb = admin.firestore().collection('users');
-    mapDoc(doc) {
-        if (!doc.exists)
-            return null;
-        const data = doc.data();
-        if (!data)
-            return null;
-        return {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt &&
-                typeof data.createdAt === 'object' &&
-                'toDate' in data.createdAt
-                ? data.createdAt.toDate()
-                : new Date(data.createdAt),
-        };
-    }
-    async getUser(id) {
-        const user = await this.usersDb.doc(id).get();
-        return this.mapDoc(user);
-    }
-    async createUser(data) {
-        await this.usersDb.doc(data.id).set(data);
-    }
-    async deleteUser(id) {
-        await this.usersDb.doc(id).delete();
+let AuthGuard = class AuthGuard {
+    async canActivate(context) {
+        const request = context.switchToHttp().getRequest();
+        const token = request.headers.authorization?.split(' ')[1];
+        if (!token) {
+            throw new common_1.UnauthorizedException('No token provided');
+        }
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            request['user'] = decodedToken;
+            return true;
+        }
+        catch (error) {
+            throw new common_1.UnauthorizedException('Invalid token', error);
+        }
     }
 };
-exports.UserRepository = UserRepository;
-exports.UserRepository = UserRepository = __decorate([
+exports.AuthGuard = AuthGuard;
+exports.AuthGuard = AuthGuard = __decorate([
     (0, common_1.Injectable)()
-], UserRepository);
-//# sourceMappingURL=user.repository.js.map
+], AuthGuard);
+//# sourceMappingURL=auth.guard.js.map

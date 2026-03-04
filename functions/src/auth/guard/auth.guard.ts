@@ -24,3 +24,12 @@ export class AuthGuard implements CanActivate {
     }
   }
 }
+
+export interface ReqUser {
+  uid: string;
+  email: string;
+  emailVerified: boolean;
+  displayName: string;
+  photoURL: string;
+  providerId: string;
+}

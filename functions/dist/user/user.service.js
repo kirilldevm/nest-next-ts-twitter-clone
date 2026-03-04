@@ -20,6 +20,16 @@ let UserService = class UserService {
     async getUser(id) {
         return this.userRepository.getUser(id);
     }
+    async deleteUser(uid, id) {
+        const user = await this.userRepository.getUser(id);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (user.id !== uid) {
+            throw new common_1.ForbiddenException('You are not allowed to delete this user');
+        }
+        return this.userRepository.deleteUser(id);
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([

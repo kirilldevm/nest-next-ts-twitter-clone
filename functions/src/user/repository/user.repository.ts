@@ -2,39 +2,25 @@ import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { User } from '../entity/user.entity';
 
-interface UserDocumentData {
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  profileImageUrl?: string | null;
-  createdAt?: admin.firestore.Timestamp | string | number;
-}
-
 @Injectable()
 export class UserRepository {
   private usersDb = admin.firestore().collection('users');
 
   private mapDoc(doc: admin.firestore.DocumentSnapshot): User | null {
     if (!doc.exists) return null;
-    const raw = doc.data();
-    if (!raw) return null;
-
-    const data = raw as UserDocumentData;
-    const createdAt =
-      data.createdAt &&
-      typeof data.createdAt === 'object' &&
-      'toDate' in data.createdAt
-        ? data.createdAt.toDate()
-        : new Date(data.createdAt as string | number);
+    const data = doc.data();
+    if (!data) return null;
 
     return {
       id: doc.id,
-      email: data.email ?? '',
-      firstName: data.firstName ?? '',
-      lastName: data.lastName ?? '',
-      profileImageUrl: data.profileImageUrl ?? null,
-      createdAt,
-    };
+      ...data,
+      createdAt:
+        data.createdAt &&
+        typeof data.createdAt === 'object' &&
+        'toDate' in data.createdAt
+          ? (data.createdAt as admin.firestore.Timestamp).toDate()
+          : new Date(data.createdAt as string | number),
+    } as User;
   }
 
   async getUser(id: string) {
@@ -42,11 +28,11 @@ export class UserRepository {
     return this.mapDoc(user);
   }
 
-  async createUser(id: string, data: UserDocumentData) {
-    const docData = {
-      ...data,
-      // createdAt: admin.firestore.Timestamp.now(),
-    };
-    await this.usersDb.doc(id).set(docData);
+  async createUser(data: User) {
+    await this.usersDb.doc(data.id).set(data);
+  }
+
+  async deleteUser(id: string) {
+    await this.usersDb.doc(id).delete();
   }
 }

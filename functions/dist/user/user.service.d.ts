@@ -3,4 +3,5 @@ export declare class UserService {
     private readonly userRepository;
     constructor(userRepository: UserRepository);
     getUser(id: string): Promise<import("./entity/user.entity").User | null>;
+    deleteUser(uid: string, id: string): Promise<void>;
 }

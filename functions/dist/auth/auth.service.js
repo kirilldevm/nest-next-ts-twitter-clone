@@ -53,20 +53,38 @@ let AuthService = class AuthService {
     }
     async signup(createUserDto) {
         const { email, password, firstName, lastName, profileImageUrl } = createUserDto;
-        const userRecord = await admin.auth().createUser({
-            email,
-            password,
-            displayName: `${firstName} ${lastName}`,
-            photoURL: profileImageUrl && profileImageUrl.trim() !== ''
-                ? profileImageUrl
-                : undefined,
-        });
+        let userRecord;
         try {
-            await this.userRepository.createUser(userRecord.uid, {
+            userRecord = await admin.auth().createUser({
+                email,
+                password,
+                displayName: `${firstName} ${lastName}`,
+                photoURL: profileImageUrl && profileImageUrl.trim() !== ''
+                    ? profileImageUrl
+                    : undefined,
+            });
+        }
+        catch (err) {
+            if (err instanceof Error && 'code' in err) {
+                const code = err.code;
+                if (code === 'auth/email-already-exists') {
+                    throw new common_1.ConflictException('The email address is already in use');
+                }
+                if (code === 'auth/invalid-photo-url') {
+                    throw new common_1.BadRequestException('Profile image must be a valid URL');
+                }
+            }
+            throw err;
+        }
+        try {
+            await this.userRepository.createUser({
+                id: userRecord.uid,
                 email: userRecord.email || '',
                 firstName,
                 lastName,
                 profileImageUrl: profileImageUrl || null,
+                createdAt: new Date(),
+                emailVerified: false,
             });
             return {
                 id: userRecord.uid,
@@ -84,8 +102,16 @@ let AuthService = class AuthService {
                     throw new common_1.BadRequestException('Profile image must be a valid URL');
                 }
             }
-            throw err;
+            throw new common_1.BadRequestException('Failed to create user');
         }
+    }
+    async signin(signinDto) {
+        const { token } = signinDto;
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        console.log(decodedToken);
+        const userRecord = await admin.auth().getUser(decodedToken.uid);
+        console.log(userRecord);
+        return userRecord;
     }
 };
 exports.AuthService = AuthService;
