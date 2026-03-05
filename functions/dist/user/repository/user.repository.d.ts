@@ -5,4 +5,5 @@ export declare class UserRepository {
     getUser(id: string): Promise<User | null>;
     createUser(data: User): Promise<void>;
     deleteUser(id: string): Promise<void>;
+    updateUser(id: string, data: Partial<User>): Promise<void>;
 }

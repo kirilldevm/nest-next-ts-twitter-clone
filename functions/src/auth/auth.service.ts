@@ -2,13 +2,12 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
+import { EmailService } from 'src/email/email.service';
 import { UserRepository } from 'src/user/repository/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SigninDto } from './dto/signin.dto';
-import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -69,9 +68,11 @@ export class AuthService {
 
       // Send verification email
       try {
-        await this.emailService.sendVerificationLink(email, name);
+        await this.emailService.sendVerificationLink(email);
       } catch (emailError) {
-        throw new BadRequestException('Failed to send verification email');
+        throw new BadRequestException(
+          'Failed to send verification email: ' + (emailError as Error).message,
+        );
       }
 
       return {
@@ -101,8 +102,25 @@ export class AuthService {
     const decodedToken = await admin.auth().verifyIdToken(token);
     const userRecord = await admin.auth().getUser(decodedToken.uid);
 
-    if (!userRecord.emailVerified) {
-      throw new UnauthorizedException('Email not verified');
+    const user = await this.userRepository.getUser(decodedToken.uid);
+
+    if (!user) {
+      await this.userRepository.createUser({
+        id: decodedToken.uid,
+        email: userRecord.email || '',
+        firstName: userRecord.displayName?.split(' ')[0],
+        lastName: userRecord.displayName?.split(' ')[1],
+        photoURL: userRecord.photoURL,
+        createdAt: new Date(),
+        emailVerified: userRecord.emailVerified,
+      });
+    } else {
+      // Verify user's email if verified
+      if (userRecord.emailVerified && !user.emailVerified) {
+        await this.userRepository.updateUser(decodedToken.uid, {
+          emailVerified: userRecord.emailVerified,
+        });
+      }
     }
 
     return {

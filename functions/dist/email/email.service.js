@@ -39,59 +39,40 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserRepository = void 0;
+exports.EmailService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
-let UserRepository = class UserRepository {
-    usersDb = admin.firestore().collection('users');
-    mapDoc(doc) {
-        if (!doc.exists)
-            return null;
-        const data = doc.data();
-        if (!data)
-            return null;
-        return {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt &&
-                typeof data.createdAt === 'object' &&
-                'toDate' in data.createdAt
-                ? data.createdAt.toDate()
-                : new Date(data.createdAt),
-        };
-    }
-    async getUser(id) {
-        const user = await this.usersDb.doc(id).get();
-        return this.mapDoc(user);
-    }
-    async createUser(data) {
-        await this.usersDb.doc(data.id).set(data);
-    }
-    async deleteUser(id) {
-        await this.usersDb.doc(id).delete();
-    }
-    async updateUser(id, data) {
-        const docRef = this.usersDb.doc(id);
-        const doc = await docRef.get();
-        if (!doc.exists) {
-            throw new common_1.NotFoundException('User not found');
+const resend_1 = require("resend");
+let EmailService = class EmailService {
+    getResend() {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+            throw new Error('RESEND_API_KEY is required. Add it to your .env file.');
         }
-        if (data.email) {
-            const existingUser = await this.usersDb
-                .where('email', '==', data.email)
-                .get();
-            if (existingUser.docs.length > 0 && existingUser.docs[0].id !== id) {
-                throw new common_1.BadRequestException('Email is already in use');
-            }
-        }
-        if (data.email && !doc.data()?.emailVerified) {
-            throw new common_1.BadRequestException('Email is not verified');
-        }
-        await doc.ref.update(data);
+        return new resend_1.Resend(apiKey);
+    }
+    async sendVerificationLink(email) {
+        const verificationLink = await admin
+            .auth()
+            .generateEmailVerificationLink(email);
+        const verifyUrl = new URL(verificationLink);
+        const frontedUrl = process.env.CORS_ORIGIN || 'http://localhost:3000';
+        const oobCode = verifyUrl.searchParams.get('oobCode');
+        const verifyLink = `${frontedUrl}/verify-email?oobCode=${oobCode}`;
+        const from = process.env.RESEND_FROM || 'noreply@twitterclone.dev';
+        await this.getResend().emails.send({
+            from: `Twitter Clone <${from}>`,
+            to: email,
+            subject: 'Verify your email',
+            html: `<div>
+        <h1>Verify your email</h1>
+        <p>Click <a href="${verifyLink}">here</a> to verify your email</p>
+      </div>`,
+        });
     }
 };
-exports.UserRepository = UserRepository;
-exports.UserRepository = UserRepository = __decorate([
+exports.EmailService = EmailService;
+exports.EmailService = EmailService = __decorate([
     (0, common_1.Injectable)()
-], UserRepository);
-//# sourceMappingURL=user.repository.js.map
+], EmailService);
+//# sourceMappingURL=email.service.js.map

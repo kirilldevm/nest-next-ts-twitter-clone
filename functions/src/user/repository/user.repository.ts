@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { User } from '../entity/user.entity';
 
@@ -34,5 +38,27 @@ export class UserRepository {
 
   async deleteUser(id: string) {
     await this.usersDb.doc(id).delete();
+  }
+
+  async updateUser(id: string, data: Partial<User>): Promise<void> {
+    const docRef = this.usersDb.doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (data.email) {
+      const existingUser = await this.usersDb
+        .where('email', '==', data.email)
+        .get();
+      if (existingUser.docs.length > 0 && existingUser.docs[0].id !== id) {
+        throw new BadRequestException('Email is already in use');
+      }
+    }
+    if (data.email && !doc.data()?.emailVerified) {
+      throw new BadRequestException('Email is not verified');
+    }
+    await doc.ref.update(data);
   }
 }

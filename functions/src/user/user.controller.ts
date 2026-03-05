@@ -1,5 +1,4 @@
 import { Controller, Delete, Get, Param, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
 import { AuthGuard, type ReqUser } from 'src/auth/guard/auth.guard';
 import { UserService } from './user.service';
 

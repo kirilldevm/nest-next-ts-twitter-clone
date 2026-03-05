@@ -45,11 +45,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
+const email_service_1 = require("../email/email.service");
 const user_repository_1 = require("../user/repository/user.repository");
 let AuthService = class AuthService {
     userRepository;
-    constructor(userRepository) {
+    emailService;
+    constructor(userRepository, emailService) {
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
     async signup(createUserDto) {
         const { email, password, firstName, lastName, profileImageUrl } = createUserDto;
@@ -62,13 +65,9 @@ let AuthService = class AuthService {
             ? profileImageUrl.trim()
             : null;
         if (trimmedPhoto) {
-            try {
-                const parsed = new URL(trimmedPhoto);
-                if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-                    createUserOptions.photoURL = trimmedPhoto;
-                }
-            }
-            catch {
+            const parsed = new URL(trimmedPhoto);
+            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                createUserOptions.photoURL = trimmedPhoto;
             }
         }
         let userRecord;
@@ -99,19 +98,20 @@ let AuthService = class AuthService {
                 createdAt: new Date(),
                 emailVerified: false,
             });
-            const token = await admin.auth().createCustomToken(userRecord.uid);
-            const verificationLink = await admin
-                .auth()
-                .generateEmailVerificationLink(userRecord.email || '');
+            try {
+                await this.emailService.sendVerificationLink(email);
+            }
+            catch (emailError) {
+                throw new common_1.BadRequestException('Failed to send verification email: ' + emailError.message);
+            }
             return {
                 success: true,
-                message: 'Verification email sent',
-                verificationLink,
-                token,
+                message: 'User created successfully',
             };
         }
         catch (err) {
             await admin.auth().deleteUser(userRecord.uid);
+            await this.userRepository.deleteUser(userRecord.uid);
             if (err instanceof Error && 'code' in err) {
                 const code = err.code;
                 if (code === 'auth/email-already-exists') {
@@ -128,8 +128,24 @@ let AuthService = class AuthService {
         const { token } = signinDto;
         const decodedToken = await admin.auth().verifyIdToken(token);
         const userRecord = await admin.auth().getUser(decodedToken.uid);
-        if (!userRecord.emailVerified) {
-            throw new common_1.UnauthorizedException('Email not verified');
+        const user = await this.userRepository.getUser(decodedToken.uid);
+        if (!user) {
+            await this.userRepository.createUser({
+                id: decodedToken.uid,
+                email: userRecord.email || '',
+                firstName: userRecord.displayName?.split(' ')[0],
+                lastName: userRecord.displayName?.split(' ')[1],
+                photoURL: userRecord.photoURL,
+                createdAt: new Date(),
+                emailVerified: userRecord.emailVerified,
+            });
+        }
+        else {
+            if (userRecord.emailVerified && !user.emailVerified) {
+                await this.userRepository.updateUser(decodedToken.uid, {
+                    emailVerified: userRecord.emailVerified,
+                });
+            }
         }
         return {
             success: true,
@@ -140,6 +156,7 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [user_repository_1.UserRepository])
+    __metadata("design:paramtypes", [user_repository_1.UserRepository,
+        email_service_1.EmailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

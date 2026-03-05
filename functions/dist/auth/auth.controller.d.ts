@@ -7,8 +7,6 @@ export declare class AuthController {
     signup(createUserDto: CreateUserDto): Promise<{
         success: boolean;
         message: string;
-        verificationLink: string;
-        token: string;
     }>;
     signin(signinDto: SigninDto): Promise<{
         success: boolean;
