@@ -1,0 +1,11 @@
+{
+  "name": "nest-next-ts-twitter-clone",
+  "private": true,
+  "scripts": {
+    "deploy": "cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy",
+    "deploy:functions": "cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy --only functions"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
