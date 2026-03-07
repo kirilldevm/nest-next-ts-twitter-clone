@@ -9,5 +9,6 @@ export const PAGES = {
   ERROR: '/error',
   VERIFY: '/verify',
 
-  //Protected
-};
+  // Protected
+  SETTINGS: '/settings',
+} as const;

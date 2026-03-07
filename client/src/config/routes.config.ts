@@ -28,7 +28,19 @@ export const authRoutes = [
 export const apiAuthPrefix = '/api/auth';
 
 /**
+ * Routes that require authentication
+ * @type {string[]}
+ */
+export const protectedRoutes = [PAGES.SETTINGS];
+
+/**
  * The default route to redirect logged in users to
  * @type {string}
  */
 export const DEFAULT_LOGIN_REDIRECT = PAGES.HOME;
+
+/**
+ * Route to redirect unauthenticated users to
+ * @type {string}
+ */
+export const DEFAULT_LOGIN_PAGE = PAGES.LOGIN;
