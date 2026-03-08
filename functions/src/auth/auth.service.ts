@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { EmailService } from 'src/email/email.service';
+import { User } from 'src/user/entity/user.entity';
 import { UserRepository } from 'src/user/repository/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SigninDto } from './dto/signin.dto';
@@ -104,8 +105,9 @@ export class AuthService {
 
     const user = await this.userRepository.getUser(decodedToken.uid);
 
+    let userData: User;
     if (!user) {
-      await this.userRepository.createUser({
+      userData = {
         id: decodedToken.uid,
         email: userRecord.email || '',
         firstName: userRecord.displayName?.split(' ')[0],
@@ -113,8 +115,11 @@ export class AuthService {
         photoURL: userRecord.photoURL,
         createdAt: new Date(),
         emailVerified: userRecord.emailVerified,
-      });
+      };
+      await this.userRepository.createUser(userData);
     } else {
+      userData = user;
+
       // Verify user's email if verified
       if (userRecord.emailVerified && !user.emailVerified) {
         await this.userRepository.updateUser(decodedToken.uid, {
@@ -126,6 +131,44 @@ export class AuthService {
     return {
       success: true,
       message: 'Signin successful',
+      user: userData,
+    };
+  }
+
+  async signInWithGoogle(signinDto: SigninDto) {
+    const { token } = signinDto;
+
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const userRecord = await admin.auth().getUser(decodedToken.uid);
+
+    const user = await this.userRepository.getUser(decodedToken.uid);
+
+    let userData: User;
+    if (!user) {
+      userData = {
+        id: decodedToken.uid,
+        email: userRecord.email || '',
+        firstName: userRecord.displayName?.split(' ')[0],
+        lastName: userRecord.displayName?.split(' ')[1],
+        photoURL: userRecord.photoURL,
+        createdAt: new Date(),
+        emailVerified: true,
+      };
+      await this.userRepository.createUser(userData);
+    } else {
+      userData = user;
+      if (!userData.emailVerified) {
+        userData.emailVerified = true;
+        await this.userRepository.updateUser(decodedToken.uid, {
+          emailVerified: true,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Signin successful',
+      user: userData,
     };
   }
 }
