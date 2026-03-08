@@ -1,5 +1,5 @@
 import theme from '@/components/theme';
-import ModeSwitch from '@/components/ui/mode-switch';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { AuthProvider } from '@/context/auth.context';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
@@ -20,8 +20,10 @@ export default function RootLayout({
       <body>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <ModeSwitch />
-          <AuthProvider>{children}</AuthProvider>
+          {/* <ModeSwitch /> */}
+          <QueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

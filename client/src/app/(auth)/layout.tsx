@@ -2,31 +2,62 @@
 
 import { DEFAULT_LOGIN_REDIRECT } from '@/config/routes.config';
 import { useAuth } from '@/context/auth.context';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || loading) return;
 
     if (user) {
       router.replace(DEFAULT_LOGIN_REDIRECT);
     }
-  }, [user, loading, router]);
+  }, [mounted, user, loading, router]);
 
-  if (loading) {
+  // Avoid hydration mismatch: auth state differs on server vs client (Firebase resolves from cache)
+  if (!mounted) {
     return (
-      <div className='flex min-h-screen items-center justify-center'>
-        <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
-      </div>
+      <Box
+        sx={{
+          display: 'flex',
+          minHeight: '100vh',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={32} />
+      </Box>
     );
   }
 
-  if (!user) {
-    return null;
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          minHeight: '100vh',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CircularProgress size={32} />
+      </Box>
+    );
+  }
+
+  if (user) {
+    return null; // Redirecting
   }
 
   return <>{children}</>;
