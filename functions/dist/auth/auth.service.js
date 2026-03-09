@@ -46,13 +46,34 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
 const email_service_1 = require("../email/email.service");
+const storage_service_1 = require("../storage/storage.service");
 const user_repository_1 = require("../user/repository/user.repository");
 let AuthService = class AuthService {
     userRepository;
     emailService;
-    constructor(userRepository, emailService) {
+    storageService;
+    constructor(userRepository, emailService, storageService) {
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.storageService = storageService;
+    }
+    async signupWithFile(signupForm, file) {
+        let profileImageUrl = null;
+        if (file?.buffer) {
+            profileImageUrl = await this.storageService.uploadProfileImage(Buffer.from(file.buffer), file.mimetype, file.originalname);
+        }
+        else if (typeof signupForm.profileImageUrl === 'string' &&
+            signupForm.profileImageUrl.trim() !== '') {
+            profileImageUrl = signupForm.profileImageUrl.trim();
+        }
+        const createUserDto = {
+            email: signupForm.email,
+            password: signupForm.password,
+            firstName: signupForm.firstName,
+            lastName: signupForm.lastName,
+            profileImageUrl: profileImageUrl || undefined,
+        };
+        return this.signup(createUserDto);
     }
     async signup(createUserDto) {
         const { email, password, firstName, lastName, profileImageUrl } = createUserDto;
@@ -129,8 +150,9 @@ let AuthService = class AuthService {
         const decodedToken = await admin.auth().verifyIdToken(token);
         const userRecord = await admin.auth().getUser(decodedToken.uid);
         const user = await this.userRepository.getUser(decodedToken.uid);
+        let userData;
         if (!user) {
-            await this.userRepository.createUser({
+            userData = {
                 id: decodedToken.uid,
                 email: userRecord.email || '',
                 firstName: userRecord.displayName?.split(' ')[0],
@@ -138,9 +160,11 @@ let AuthService = class AuthService {
                 photoURL: userRecord.photoURL,
                 createdAt: new Date(),
                 emailVerified: userRecord.emailVerified,
-            });
+            };
+            await this.userRepository.createUser(userData);
         }
         else {
+            userData = user;
             if (userRecord.emailVerified && !user.emailVerified) {
                 await this.userRepository.updateUser(decodedToken.uid, {
                     emailVerified: userRecord.emailVerified,
@@ -150,6 +174,41 @@ let AuthService = class AuthService {
         return {
             success: true,
             message: 'Signin successful',
+            user: userData,
+        };
+    }
+    async signInWithGoogle(signinDto) {
+        const { token } = signinDto;
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const userRecord = await admin.auth().getUser(decodedToken.uid);
+        const user = await this.userRepository.getUser(decodedToken.uid);
+        let userData;
+        if (!user) {
+            userData = {
+                id: decodedToken.uid,
+                email: userRecord.email || '',
+                firstName: userRecord.displayName?.split(' ')[0],
+                lastName: userRecord.displayName?.split(' ')[1],
+                photoURL: userRecord.photoURL,
+                createdAt: new Date(),
+                emailVerified: true,
+            };
+            await this.userRepository.createUser(userData);
+        }
+        else {
+            userData = user;
+            if (!userData.emailVerified) {
+                userData.emailVerified = true;
+                await this.userRepository.updateUser(decodedToken.uid, {
+                    emailVerified: true,
+                });
+            }
+        }
+        console.log('signin with Google successful', userData);
+        return {
+            success: true,
+            message: 'Signin successful',
+            user: userData,
         };
     }
 };
@@ -157,6 +216,7 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [user_repository_1.UserRepository,
-        email_service_1.EmailService])
+        email_service_1.EmailService,
+        storage_service_1.StorageService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

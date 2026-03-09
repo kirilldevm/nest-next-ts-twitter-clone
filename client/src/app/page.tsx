@@ -1,10 +1,12 @@
+'use client';
+
 import Link from '@/components/link';
-import Copyright from '@/components/ui/copyright';
-import ProTip from '@/components/ui/pro-tip';
+import { auth } from '@/config/firebase.config';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import MaterialUILink from '@mui/material/Link';
-import Typography from '@mui/material/Typography';
+import { signOut } from 'firebase/auth';
 
 export default function Home() {
   return (
@@ -18,14 +20,29 @@ export default function Home() {
           alignItems: 'center',
         }}
       >
-        <Typography variant='h4' component='h1' sx={{ mb: 2 }}>
-          Material UI - Next.js example in TypeScript
-        </Typography>
-        <MaterialUILink component={Link} href='/about' color='secondary'>
-          Go to the about page
+        <Button
+          variant='contained'
+          color='primary'
+          onClick={() => {
+            signOut(auth)
+              .then(() => {
+                console.log('signed out');
+              })
+              .catch((error) => {
+                console.error(error);
+              });
+          }}
+        >
+          Sign Out
+        </Button>
+
+        <MaterialUILink component={Link} href='/signin'>
+          Sign In
         </MaterialUILink>
-        <ProTip />
-        <Copyright />
+
+        <MaterialUILink component={Link} href='/signup'>
+          Sign Up
+        </MaterialUILink>
       </Box>
     </Container>
   );

@@ -8,8 +8,9 @@ import { toast } from 'sonner';
 export function useSignupMutation() {
   return useMutation({
     mutationFn: (data: SignupInput) => authService.signup(data),
-    onSuccess: () => {
-      toast.success('Signup successful');
+    onSuccess: (data) => {
+      console.log('signup successful', data);
+      toast.success(data.message);
     },
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : 'Signup failed');
@@ -27,6 +28,23 @@ export function useSigninMutation() {
     },
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : 'Signin failed');
+    },
+  });
+}
+
+export function useSigninWithGoogleMutation() {
+  const router = useRouter();
+  return useMutation({
+    mutationFn: (token: string) => authService.signinWithGoogle(token),
+    onSuccess: (data) => {
+      console.log('signin with Google successful', data);
+      toast.success('Signin with Google successful');
+      router.push(DEFAULT_LOGIN_REDIRECT);
+    },
+    onError: (error: unknown) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Signin with Google failed',
+      );
     },
   });
 }

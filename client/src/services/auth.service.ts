@@ -1,19 +1,55 @@
 import { ENDPOINTS } from '@/config/endpoints.config';
+import api from '@/lib/api';
 import { type SignupInput } from '@/schemas/auth.schema';
-import axios from 'axios';
+import type {
+  SigninResponse,
+  SigninWithGoogleResponse,
+  SignupResponse,
+} from '@/types';
 
 export class AuthService {
   async signup(data: SignupInput) {
-    const { confirmPassword, ...rest } = data;
+    const { confirmPassword, profileImage, ...rest } = data;
     if (confirmPassword !== rest.password) {
       throw new Error('Passwords do not match');
     }
-    const response = await axios.post(ENDPOINTS.AUTH.SIGNUP, rest);
+
+    if (profileImage) {
+      const formData = new FormData();
+      formData.append('email', rest.email);
+      formData.append('password', rest.password);
+      formData.append('firstName', rest.firstName);
+      formData.append('lastName', rest.lastName);
+      formData.append('profileImage', profileImage);
+
+      const response = await api.post<SignupResponse>(
+        ENDPOINTS.AUTH.SIGNUP,
+        formData,
+      );
+      return response.data;
+    }
+
+    const response = await api.post<SignupResponse>(
+      ENDPOINTS.AUTH.SIGNUP,
+      rest,
+    );
     return response.data;
   }
 
   async signin(token: string) {
-    const response = await axios.post(ENDPOINTS.AUTH.SIGNIN, { token });
+    const response = await api.post<SigninResponse>(ENDPOINTS.AUTH.SIGNIN, {
+      token,
+    });
+    return response.data;
+  }
+
+  async signinWithGoogle(token: string) {
+    const response = await api.post<SigninWithGoogleResponse>(
+      ENDPOINTS.AUTH.SIGNIN_WITH_GOOGLE,
+      {
+        token,
+      },
+    );
     return response.data;
   }
 }

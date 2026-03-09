@@ -3,26 +3,26 @@
 import Link from '@/components/link';
 import ContinueWithGoogleButton from '@/components/ui/continue-with-google-button';
 import { auth, googleProvider } from '@/config/firebase.config';
-import { SignupInput, signupSchema } from '@/schemas/auth.schema';
+import {
+  useSigninWithGoogleMutation,
+  useSignupMutation,
+} from '@/hooks/auth.hook';
+import { type SignupInput, signupSchema } from '@/schemas/auth.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Input } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import {
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  updateProfile,
-} from 'firebase/auth';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { signInWithPopup } from 'firebase/auth';
+import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 
 export default function RegisterForm() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { mutate: signup, isPending: isSigningUp } = useSignupMutation();
+  const { mutate: signinWithGoogle, isPending: isSigningInWithGoogle } =
+    useSigninWithGoogleMutation();
+  const isLoading = isSigningUp || isSigningInWithGoogle;
 
   const {
     register,
@@ -30,49 +30,35 @@ export default function RegisterForm() {
     formState: { errors },
   } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: '',
+      profileImage: undefined,
+    } as SignupInput,
   });
 
-  const onSubmit = async (data: SignupInput) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const credential = await createUserWithEmailAndPassword(
-        auth,
-        data.email,
-        data.password,
-      );
-      await updateProfile(credential.user, {
-        displayName: `${data.firstName} ${data.lastName}`,
-      });
-      router.push('/');
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Something went wrong. Try again.',
-      );
-    } finally {
-      setLoading(false);
-    }
+  const onSubmit = (data: SignupInput) => {
+    console.log(data);
+    signup(data);
   };
 
   const handleGoogleSignUp = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      router.push('/');
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Something went wrong. Try again.',
-      );
-    } finally {
-      setLoading(false);
+    const credential = await signInWithPopup(auth, googleProvider);
+    const token = await credential.user.getIdToken();
+    console.log(token);
+    if (!token) {
+      throw new Error('Failed to signin with Google');
     }
+    signinWithGoogle(token);
   };
 
   return (
     <Box
       component='form'
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit as SubmitHandler<FieldValues>)}
       noValidate
       sx={{
         display: 'flex',
@@ -90,7 +76,7 @@ export default function RegisterForm() {
 
       <ContinueWithGoogleButton
         onClick={handleGoogleSignUp}
-        disabled={loading}
+        disabled={isLoading}
         fullWidth
       />
 
@@ -108,6 +94,16 @@ export default function RegisterForm() {
           helperText={errors.firstName?.message}
           fullWidth
           autoComplete='name'
+          size='small'
+          variant='outlined'
+        />
+        <TextField
+          {...register('lastName')}
+          label='Last name'
+          error={!!errors.lastName}
+          helperText={errors.lastName?.message}
+          fullWidth
+          autoComplete='family-name'
           size='small'
           variant='outlined'
         />
@@ -145,20 +141,35 @@ export default function RegisterForm() {
           variant='outlined'
         />
 
-        {error && (
+        <Box>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
+            Profile image (optional)
+          </Typography>
+          <Input
+            {...register('profileImage')}
+            type='file'
+            inputProps={{
+              accept: 'image/jpeg,image/png,image/webp,image/gif',
+            }}
+            disableUnderline
+            sx={{ fontSize: '0.875rem' }}
+            fullWidth
+          />
+        </Box>
+        {errors.profileImage && (
           <Typography variant='caption' color='error'>
-            {error}
+            {errors.profileImage.message}
           </Typography>
         )}
 
         <Button
           type='submit'
           variant='contained'
-          disabled={loading}
+          disabled={isLoading}
           fullWidth
           sx={{ py: 1.25, textTransform: 'none' }}
         >
-          Create account
+          {isLoading ? 'Creating account...' : 'Create account'}
         </Button>
       </Box>
 

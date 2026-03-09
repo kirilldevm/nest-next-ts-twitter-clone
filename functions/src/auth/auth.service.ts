@@ -5,17 +5,45 @@ import {
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { EmailService } from 'src/email/email.service';
+import { StorageService } from 'src/storage/storage.service';
 import { User } from 'src/user/entity/user.entity';
 import { UserRepository } from 'src/user/repository/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SigninDto } from './dto/signin.dto';
+import type { SignupFormDto } from './dto/signup-form.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly emailService: EmailService,
+    private readonly storageService: StorageService,
   ) {}
+
+  async signupWithFile(signupForm: SignupFormDto, file?: Express.Multer.File) {
+    let profileImageUrl: string | null = null;
+    if (file?.buffer) {
+      profileImageUrl = await this.storageService.uploadProfileImage(
+        Buffer.from(file.buffer),
+        file.mimetype,
+        file.originalname,
+      );
+    } else if (
+      typeof signupForm.profileImageUrl === 'string' &&
+      signupForm.profileImageUrl.trim() !== ''
+    ) {
+      profileImageUrl = signupForm.profileImageUrl.trim();
+    }
+
+    const createUserDto: CreateUserDto = {
+      email: signupForm.email,
+      password: signupForm.password,
+      firstName: signupForm.firstName,
+      lastName: signupForm.lastName,
+      profileImageUrl: profileImageUrl || undefined,
+    };
+    return this.signup(createUserDto);
+  }
 
   async signup(createUserDto: CreateUserDto) {
     const { email, password, firstName, lastName, profileImageUrl } =
@@ -164,6 +192,8 @@ export class AuthService {
         });
       }
     }
+
+    console.log('signin with Google successful', userData);
 
     return {
       success: true,
