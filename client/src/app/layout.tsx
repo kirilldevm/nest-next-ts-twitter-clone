@@ -1,9 +1,10 @@
-import theme from '@/components/theme';
 import { QueryProvider } from '@/components/providers/query-provider';
+import theme from '@/components/theme';
 import { AuthProvider } from '@/context/auth.context';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
   title: 'TwiXter',
@@ -19,8 +20,8 @@ export default function RootLayout({
     <html lang='en' suppressHydrationWarning={true}>
       <body>
         <ThemeProvider theme={theme}>
+          <Toaster position='bottom-right' richColors />
           <CssBaseline />
-          {/* <ModeSwitch /> */}
           <QueryProvider>
             <AuthProvider>{children}</AuthProvider>
           </QueryProvider>
