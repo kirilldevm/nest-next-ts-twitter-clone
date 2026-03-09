@@ -26,10 +26,10 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.dispatchEvent(new Event('force-logout'));
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

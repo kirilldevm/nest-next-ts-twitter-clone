@@ -16,7 +16,7 @@ import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { signInWithPopup } from 'firebase/auth';
-import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 export default function RegisterForm() {
   const { mutate: signup, isPending: isSigningUp } = useSignupMutation();
@@ -25,6 +25,7 @@ export default function RegisterForm() {
   const isLoading = isSigningUp || isSigningInWithGoogle;
 
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
@@ -37,7 +38,7 @@ export default function RegisterForm() {
       firstName: '',
       lastName: '',
       profileImage: undefined,
-    } as SignupInput,
+    },
   });
 
   const onSubmit = (data: SignupInput) => {
@@ -58,7 +59,7 @@ export default function RegisterForm() {
   return (
     <Box
       component='form'
-      onSubmit={handleSubmit(onSubmit as SubmitHandler<FieldValues>)}
+      onSubmit={handleSubmit(onSubmit)}
       noValidate
       sx={{
         display: 'flex',
@@ -145,15 +146,25 @@ export default function RegisterForm() {
           <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
             Profile image (optional)
           </Typography>
-          <Input
-            {...register('profileImage')}
-            type='file'
-            inputProps={{
-              accept: 'image/jpeg,image/png,image/webp,image/gif',
-            }}
-            disableUnderline
-            sx={{ fontSize: '0.875rem' }}
-            fullWidth
+          <Controller
+            name='profileImage'
+            control={control}
+            render={({ field: { onChange, ref } }) => (
+              <Input
+                inputRef={ref}
+                type='file'
+                inputProps={{
+                  accept: 'image/jpeg,image/png,image/webp,image/gif',
+                }}
+                disableUnderline
+                sx={{ fontSize: '0.875rem' }}
+                fullWidth
+                onChange={(e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  onChange(file ?? undefined);
+                }}
+              />
+            )}
           />
         </Box>
         {errors.profileImage && (

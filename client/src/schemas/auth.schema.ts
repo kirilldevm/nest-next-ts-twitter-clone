@@ -10,11 +10,8 @@ export const signupSchema = z
     firstName: z.string().min(1, 'First name is required'),
     lastName: z.string().min(1, 'Last name is required'),
     profileImage: z
-      .union([z.instanceof(FileList), z.instanceof(File)])
+      .instanceof(File)
       .optional()
-      .transform((val) =>
-        val instanceof FileList && val.length ? val[0] : val instanceof File ? val : undefined
-      )
       .refine((file) => !file || file.size <= 5 * 1024 * 1024, 'Max size 5MB')
       .refine(
         (file) =>
