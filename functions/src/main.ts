@@ -1,6 +1,7 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
+import cors from 'cors';
 import express from 'express';
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
@@ -23,9 +24,40 @@ if (projectId && clientEmail && privateKey && !privateKey.startsWith('<')) {
   admin.initializeApp();
 }
 
-const origins = process.env.CORS_ORIGIN?.split(',') || [];
+const origins = (process.env.CORS_ORIGIN ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean) || [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+];
+
+const isLocalOrigin = (origin: string) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
 const server = express();
+
+server.use(
+  cors({
+    origin: (requestOrigin, callback) => {
+      if (!requestOrigin) {
+        callback(null, true);
+      } else if (
+        origins.includes(requestOrigin) ||
+        isLocalOrigin(requestOrigin)
+      ) {
+        callback(null, requestOrigin);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  }),
+);
 
 export const createNestServer = async (expressInstance: express.Express) => {
   const app = await NestFactory.create(
@@ -41,7 +73,11 @@ export const createNestServer = async (expressInstance: express.Express) => {
       // forbidNonWhitelisted: true,
     }),
   );
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({

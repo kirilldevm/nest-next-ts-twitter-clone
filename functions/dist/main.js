@@ -40,6 +40,7 @@ exports.api = exports.createNestServer = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const platform_express_1 = require("@nestjs/platform-express");
+const cors_1 = __importDefault(require("cors"));
 const express_1 = __importDefault(require("express"));
 const admin = __importStar(require("firebase-admin"));
 const functions = __importStar(require("firebase-functions"));
@@ -60,8 +61,33 @@ if (projectId && clientEmail && privateKey && !privateKey.startsWith('<')) {
 else {
     admin.initializeApp();
 }
-const origins = process.env.CORS_ORIGIN?.split(',') || [];
+const origins = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean) || [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5000',
+    'http://127.0.0.1:5000',
+];
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 const server = (0, express_1.default)();
+server.use((0, cors_1.default)({
+    origin: (requestOrigin, callback) => {
+        if (!requestOrigin) {
+            callback(null, true);
+        }
+        else if (origins.includes(requestOrigin) || isLocalOrigin(requestOrigin)) {
+            callback(null, requestOrigin);
+        }
+        else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+}));
 const createNestServer = async (expressInstance) => {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, new platform_express_1.ExpressAdapter(expressInstance));
     app.useGlobalInterceptors(new common_1.ClassSerializerInterceptor(app.get(core_1.Reflector)));
@@ -69,7 +95,9 @@ const createNestServer = async (expressInstance) => {
         transform: true,
         whitelist: true,
     }));
-    app.use((0, helmet_1.default)());
+    app.use((0, helmet_1.default)({
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }));
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,

@@ -2,8 +2,16 @@ import { DEFAULT_LOGIN_REDIRECT } from '@/config/routes.config';
 import { type SignupInput } from '@/schemas/auth.schema';
 import { authService } from '@/services/auth.service';
 import { useMutation } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError(error) && error.response?.data?.message) {
+    return String(error.response.data.message);
+  }
+  return error instanceof Error ? error.message : fallback;
+}
 
 export function useSignupMutation() {
   return useMutation({
@@ -13,7 +21,7 @@ export function useSignupMutation() {
       toast.success(data.message);
     },
     onError: (error: unknown) => {
-      toast.error(error instanceof Error ? error.message : 'Signup failed');
+      toast.error(getErrorMessage(error, 'Signup failed'));
     },
   });
 }
@@ -27,7 +35,7 @@ export function useSigninMutation() {
       router.push(DEFAULT_LOGIN_REDIRECT);
     },
     onError: (error: unknown) => {
-      toast.error(error instanceof Error ? error.message : 'Signin failed');
+      toast.error(getErrorMessage(error, 'Signin failed'));
     },
   });
 }
@@ -37,14 +45,11 @@ export function useSigninWithGoogleMutation() {
   return useMutation({
     mutationFn: (token: string) => authService.signinWithGoogle(token),
     onSuccess: (data) => {
-      console.log('signin with Google successful', data);
       toast.success('Signin with Google successful');
       router.push(DEFAULT_LOGIN_REDIRECT);
     },
     onError: (error: unknown) => {
-      toast.error(
-        error instanceof Error ? error.message : 'Signin with Google failed',
-      );
+      toast.error(getErrorMessage(error, 'Signin with Google failed'));
     },
   });
 }
