@@ -6,24 +6,17 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import * as multer from 'multer';
+import { profileImageMulterOptions } from 'src/common/multer.config';
 import { AuthService } from './auth.service';
 import { SigninDto } from './dto/signin.dto';
 import { SignupFormDto } from './dto/signup-form.dto';
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
-  @UseInterceptors(
-    FileInterceptor('profileImage', {
-      storage: multer.memoryStorage(),
-      limits: { fileSize: MAX_FILE_SIZE },
-    }),
-  )
+  @UseInterceptors(FileInterceptor('profileImage', profileImageMulterOptions))
   signup(
     @Body() signupForm: SignupFormDto,
     @UploadedFile() file?: Express.Multer.File,

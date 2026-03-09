@@ -45,6 +45,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
+const error_utils_1 = require("../common/error.utils");
 const email_service_1 = require("../email/email.service");
 const storage_service_1 = require("../storage/storage.service");
 const user_repository_1 = require("../user/repository/user.repository");
@@ -61,10 +62,6 @@ let AuthService = class AuthService {
         let profileImageUrl = null;
         if (file?.buffer) {
             profileImageUrl = await this.storageService.uploadProfileImage(Buffer.from(file.buffer), file.mimetype, file.originalname);
-        }
-        else if (typeof signupForm.profileImageUrl === 'string' &&
-            signupForm.profileImageUrl.trim() !== '') {
-            profileImageUrl = signupForm.profileImageUrl.trim();
         }
         const createUserDto = {
             email: signupForm.email,
@@ -96,12 +93,11 @@ let AuthService = class AuthService {
             userRecord = await admin.auth().createUser(createUserOptions);
         }
         catch (err) {
-            if (err instanceof Error && 'code' in err) {
-                const code = err.code;
-                if (code === 'auth/email-already-exists') {
+            if ((0, error_utils_1.isFirebaseAuthError)(err)) {
+                if (err.code === 'auth/email-already-exists') {
                     throw new common_1.ConflictException('The email address is already in use');
                 }
-                if (code === 'auth/invalid-photo-url') {
+                if (err.code === 'auth/invalid-photo-url') {
                     throw new common_1.BadRequestException('Profile image must be a valid URL');
                 }
             }
@@ -123,7 +119,7 @@ let AuthService = class AuthService {
                 await this.emailService.sendVerificationLink(email);
             }
             catch (emailError) {
-                throw new common_1.BadRequestException('Failed to send verification email: ' + emailError.message);
+                throw new common_1.BadRequestException('Failed to send verification email: ' + (0, error_utils_1.getErrorMessage)(emailError));
             }
             return {
                 success: true,
@@ -133,12 +129,11 @@ let AuthService = class AuthService {
         catch (err) {
             await admin.auth().deleteUser(userRecord.uid);
             await this.userRepository.deleteUser(userRecord.uid);
-            if (err instanceof Error && 'code' in err) {
-                const code = err.code;
-                if (code === 'auth/email-already-exists') {
+            if ((0, error_utils_1.isFirebaseAuthError)(err)) {
+                if (err.code === 'auth/email-already-exists') {
                     throw new common_1.ConflictException('The email address is already in use');
                 }
-                if (code === 'auth/invalid-photo-url') {
+                if (err.code === 'auth/invalid-photo-url') {
                     throw new common_1.BadRequestException('Profile image must be a valid URL');
                 }
             }

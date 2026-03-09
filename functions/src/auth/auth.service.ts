@@ -4,6 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
+import { getErrorMessage, isFirebaseAuthError } from 'src/common/error.utils';
 import { EmailService } from 'src/email/email.service';
 import { StorageService } from 'src/storage/storage.service';
 import { User } from 'src/user/entity/user.entity';
@@ -28,11 +29,6 @@ export class AuthService {
         file.mimetype,
         file.originalname,
       );
-    } else if (
-      typeof signupForm.profileImageUrl === 'string' &&
-      signupForm.profileImageUrl.trim() !== ''
-    ) {
-      profileImageUrl = signupForm.profileImageUrl.trim();
     }
 
     const createUserDto: CreateUserDto = {
@@ -69,12 +65,11 @@ export class AuthService {
     try {
       userRecord = await admin.auth().createUser(createUserOptions);
     } catch (err) {
-      if (err instanceof Error && 'code' in err) {
-        const code = err.code as string;
-        if (code === 'auth/email-already-exists') {
+      if (isFirebaseAuthError(err)) {
+        if (err.code === 'auth/email-already-exists') {
           throw new ConflictException('The email address is already in use');
         }
-        if (code === 'auth/invalid-photo-url') {
+        if (err.code === 'auth/invalid-photo-url') {
           throw new BadRequestException('Profile image must be a valid URL');
         }
       }
@@ -98,9 +93,9 @@ export class AuthService {
       // Send verification email
       try {
         await this.emailService.sendVerificationLink(email);
-      } catch (emailError) {
+      } catch (emailError: unknown) {
         throw new BadRequestException(
-          'Failed to send verification email: ' + (emailError as Error).message,
+          'Failed to send verification email: ' + getErrorMessage(emailError),
         );
       }
 
@@ -112,12 +107,11 @@ export class AuthService {
       await admin.auth().deleteUser(userRecord.uid);
       await this.userRepository.deleteUser(userRecord.uid);
 
-      if (err instanceof Error && 'code' in err) {
-        const code = err.code as string;
-        if (code === 'auth/email-already-exists') {
+      if (isFirebaseAuthError(err)) {
+        if (err.code === 'auth/email-already-exists') {
           throw new ConflictException('The email address is already in use');
         }
-        if (code === 'auth/invalid-photo-url') {
+        if (err.code === 'auth/invalid-photo-url') {
           throw new BadRequestException('Profile image must be a valid URL');
         }
       }

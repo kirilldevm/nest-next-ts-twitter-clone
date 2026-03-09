@@ -3,5 +3,4 @@ export declare class SignupFormDto {
     password: string;
     firstName: string;
     lastName: string;
-    profileImageUrl?: string;
 }

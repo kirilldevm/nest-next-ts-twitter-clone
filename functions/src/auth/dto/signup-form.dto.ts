@@ -1,10 +1,4 @@
-import {
-  IsEmail,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class SignupFormDto {
   @IsEmail()
@@ -24,7 +18,7 @@ export class SignupFormDto {
   @IsNotEmpty()
   lastName!: string;
 
-  @IsOptional()
-  @IsString()
-  profileImageUrl?: string;
+  // @IsOptional()
+  // @IsString()
+  // profileImageUrl?: string;
 }

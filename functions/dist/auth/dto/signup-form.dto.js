@@ -16,7 +16,6 @@ class SignupFormDto {
     password;
     firstName;
     lastName;
-    profileImageUrl;
 }
 exports.SignupFormDto = SignupFormDto;
 __decorate([
@@ -40,9 +39,4 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SignupFormDto.prototype, "lastName", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], SignupFormDto.prototype, "profileImageUrl", void 0);
 //# sourceMappingURL=signup-form.dto.js.map
