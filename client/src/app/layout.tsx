@@ -1,5 +1,6 @@
 import { QueryProvider } from '@/components/providers/query-provider';
 import theme from '@/components/theme';
+import Header from '@/components/ui/header';
 import { AuthProvider } from '@/context/auth.context';
 import { CssBaseline } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
@@ -23,7 +24,10 @@ export default function RootLayout({
           <Toaster position='bottom-right' richColors />
           <CssBaseline />
           <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <Header />
+              {children}
+            </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

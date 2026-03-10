@@ -1,11 +1,9 @@
-import { DEFAULT_LOGIN_REDIRECT } from '@/config/routes.config';
 import { useAuth } from '@/context/auth.context';
 import { type SigninInput, type SignupInput } from '@/schemas/auth.schema';
 import { authService } from '@/services/auth.service';
 import { SigninWithGoogleResponse, SignupResponse } from '@/types';
 import { useMutation } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -34,12 +32,10 @@ export function useSigninMutation() {
 }
 
 export function useSigninWithGoogleMutation() {
-  const router = useRouter();
   return useMutation({
     mutationFn: (token: string) => authService.signinWithGoogle(token),
     onSuccess: (data: SigninWithGoogleResponse) => {
       toast.success(data.message || 'Signin with Google successful');
-      router.push(DEFAULT_LOGIN_REDIRECT);
     },
     onError: (error: unknown) => {
       toast.error(getErrorMessage(error, 'Signin with Google failed'));

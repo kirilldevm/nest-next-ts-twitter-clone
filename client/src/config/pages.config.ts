@@ -2,13 +2,14 @@ export const PAGES = {
   HOME: '/',
 
   //Auth
-  LOGIN: '/login',
-  REGISTER: '/register',
-  FORGOT_PASSWORD: '/reset-password',
-  NEW_PASSWORD: '/new-password',
+  LOGIN: '/signin',
+  REGISTER: '/signup',
+  FORGOT_PASSWORD: '/forgot-password',
+  // NEW_PASSWORD: '/new-password',
   ERROR: '/error',
   VERIFY: '/verify',
 
   // Protected
   SETTINGS: '/settings',
+  PROFILE: '/profile',
 } as const;
