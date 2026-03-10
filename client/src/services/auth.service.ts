@@ -1,7 +1,7 @@
 import { ENDPOINTS } from '@/config/endpoints.config';
+import { auth } from '@/config/firebase.config';
 import api from '@/lib/api';
-import { isAxiosError } from 'axios';
-import { type SignupInput } from '@/schemas/auth.schema';
+import { type SigninInput, type SignupInput } from '@/schemas/auth.schema';
 import {
   deleteProfileImage,
   uploadProfileImage,
@@ -11,6 +11,8 @@ import type {
   SigninWithGoogleResponse,
   SignupResponse,
 } from '@/types';
+import { isAxiosError } from 'axios';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 export class AuthService {
   async signup(data: SignupInput) {
@@ -47,7 +49,7 @@ export class AuthService {
         try {
           await deleteProfileImage(uploadedPath);
         } catch {
-          // Best-effort cleanup, ignore deletion errors
+          // Very bad situation, but we can't do anything about it
         }
       }
       if (isAxiosError(error) && error.response?.data?.message) {
@@ -62,6 +64,53 @@ export class AuthService {
       token,
     });
     return response.data;
+  }
+
+  async signinWithEmailPassword(data: SigninInput) {
+    try {
+      const credential = await signInWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password,
+      );
+
+      const token = await credential.user.getIdToken();
+      const response = await api.post<SigninResponse>(ENDPOINTS.AUTH.SIGNIN, {
+        token,
+      });
+
+      const result = response.data;
+
+      if ('error' in result || !result.success) {
+        const message = result.message || 'Signin failed';
+        throw new Error(message);
+      }
+
+      return { user: result.user, token };
+    } catch (error) {
+      signOut(auth);
+      if (isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(String(error.response.data.message));
+      }
+
+      if (error instanceof Error && 'code' in error) {
+        const code = (error as Error & { code?: string }).code;
+        if (
+          code === 'auth/invalid-credential' ||
+          code === 'auth/wrong-password'
+        ) {
+          throw new Error('Invalid email or password');
+        }
+        if (code === 'auth/user-not-found') {
+          throw new Error('No account found with this email');
+        }
+        if (code === 'auth/invalid-email') {
+          throw new Error('Invalid email address');
+        }
+      }
+
+      throw error;
+    }
   }
 
   async signinWithGoogle(token: string) {

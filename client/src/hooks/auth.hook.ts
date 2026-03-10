@@ -1,5 +1,6 @@
 import { DEFAULT_LOGIN_REDIRECT } from '@/config/routes.config';
-import { type SignupInput } from '@/schemas/auth.schema';
+import { useAuth } from '@/context/auth.context';
+import { type SigninInput, type SignupInput } from '@/schemas/auth.schema';
 import { authService } from '@/services/auth.service';
 import { SigninWithGoogleResponse, SignupResponse } from '@/types';
 import { useMutation } from '@tanstack/react-query';
@@ -17,20 +18,18 @@ function getErrorMessage(error: unknown, fallback: string): string {
 export function useSignupMutation() {
   return useMutation<SignupResponse, Error, SignupInput>({
     mutationFn: (data: SignupInput) => authService.signup(data),
-    onSuccess: (data: SignupResponse) => {
-      toast.success(data.message);
-    },
-    onError: (error: unknown) => {
-      console.log(error);
-    },
   });
 }
 
 export function useSigninMutation() {
   const router = useRouter();
+  const { signin } = useAuth();
+
   return useMutation({
-    mutationFn: (token: string) => authService.signin(token),
-    onSuccess: () => {
+    mutationFn: (data: SigninInput) =>
+      authService.signinWithEmailPassword(data),
+    onSuccess: (data) => {
+      signin({ user: data.user, token: data.token });
       toast.success('Signin successful');
       router.push(DEFAULT_LOGIN_REDIRECT);
     },
