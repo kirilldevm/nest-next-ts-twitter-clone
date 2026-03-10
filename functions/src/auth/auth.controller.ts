@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { SigninDto } from './dto/signin.dto';
 
 @Controller('auth')
@@ -20,5 +21,10 @@ export class AuthController {
   @Post('signin-with-google')
   signinWithGoogle(@Body() signinDto: SigninDto) {
     return this.authService.signInWithGoogle(signinDto);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.checkEmailForPasswordReset(dto);
   }
 }

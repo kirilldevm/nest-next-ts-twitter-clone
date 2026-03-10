@@ -152,7 +152,15 @@ let AuthService = class AuthService {
                 await this.userRepository.updateUser(decodedToken.uid, {
                     emailVerified: userRecord.emailVerified,
                 });
+                userData.emailVerified = userRecord.emailVerified;
             }
+        }
+        if (!userData.emailVerified) {
+            await this.emailService.sendVerificationLink(userData.email);
+            return {
+                success: false,
+                message: 'Email not verified. Please check your email for a verification link.',
+            };
         }
         return {
             success: true,
@@ -193,6 +201,22 @@ let AuthService = class AuthService {
             message: 'Signin successful',
             user: userData,
         };
+    }
+    async checkEmailForPasswordReset(dto) {
+        try {
+            const userRecord = await admin.auth().getUserByEmail(dto.email);
+            const hasPassword = userRecord.providerData.some((p) => p.providerId === 'password');
+            if (!hasPassword) {
+                throw new common_1.BadRequestException('This account uses Google sign-in. Use "Continue with Google" instead.');
+            }
+            return { ok: true };
+        }
+        catch (err) {
+            if ((0, error_utils_1.isFirebaseAuthError)(err) && err.code === 'auth/user-not-found') {
+                throw new common_1.BadRequestException('No account found with this email');
+            }
+            throw err;
+        }
     }
 };
 exports.AuthService = AuthService;

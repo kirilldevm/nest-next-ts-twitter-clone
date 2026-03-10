@@ -9,6 +9,7 @@ import { EmailService } from 'src/email/email.service';
 import { User } from 'src/user/entity/user.entity';
 import { UserRepository } from 'src/user/repository/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { SigninDto } from './dto/signin.dto';
 
 @Injectable()
@@ -185,5 +186,28 @@ export class AuthService {
       message: 'Signin successful',
       user: userData,
     };
+  }
+
+  async checkEmailForPasswordReset(dto: ForgotPasswordDto) {
+    try {
+      const userRecord = await admin.auth().getUserByEmail(dto.email);
+
+      // Check if user has a password (email/password provider)
+      const hasPassword = userRecord.providerData.some(
+        (p) => p.providerId === 'password',
+      );
+      if (!hasPassword) {
+        throw new BadRequestException(
+          'This account uses Google sign-in. Use "Continue with Google" instead.',
+        );
+      }
+
+      return { ok: true };
+    } catch (err) {
+      if (isFirebaseAuthError(err) && err.code === 'auth/user-not-found') {
+        throw new BadRequestException('No account found with this email');
+      }
+      throw err;
+    }
   }
 }

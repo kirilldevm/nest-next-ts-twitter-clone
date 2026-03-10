@@ -22,7 +22,6 @@ export function useSignupMutation() {
 }
 
 export function useSigninMutation() {
-  const router = useRouter();
   const { signin } = useAuth();
 
   return useMutation({
@@ -30,11 +29,6 @@ export function useSigninMutation() {
       authService.signinWithEmailPassword(data),
     onSuccess: (data) => {
       signin({ user: data.user, token: data.token });
-      toast.success('Signin successful');
-      router.push(DEFAULT_LOGIN_REDIRECT);
-    },
-    onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Signin failed'));
     },
   });
 }
@@ -50,5 +44,12 @@ export function useSigninWithGoogleMutation() {
     onError: (error: unknown) => {
       toast.error(getErrorMessage(error, 'Signin with Google failed'));
     },
+  });
+}
+
+export function useCheckAndSendPasswordResetEmailMutation() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      authService.checkAndSendPasswordResetEmail(email),
   });
 }

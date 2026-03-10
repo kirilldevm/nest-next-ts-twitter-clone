@@ -12,7 +12,11 @@ import type {
   SignupResponse,
 } from '@/types';
 import { isAxiosError } from 'axios';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
 
 export class AuthService {
   async signup(data: SignupInput) {
@@ -109,6 +113,37 @@ export class AuthService {
         }
       }
 
+      throw error;
+    }
+  }
+
+  async checkEmailForPasswordReset(email: string) {
+    try {
+      const response = await api.post<{ ok: boolean }>(
+        ENDPOINTS.AUTH.FORGOT_PASSWORD,
+        { email },
+      );
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(String(error.response.data.message));
+      }
+      throw error;
+    }
+  }
+
+  async checkAndSendPasswordResetEmail(email: string) {
+    try {
+      const response = await this.checkEmailForPasswordReset(email);
+      if (!response.ok) {
+        throw new Error('No account found with this email');
+      }
+      await sendPasswordResetEmail(auth, email);
+      return { success: true, message: 'Password reset email sent' };
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(String(error.response.data.message));
+      }
       throw error;
     }
   }

@@ -1,42 +1,52 @@
 'use client';
 
 import Link from '@/components/link';
-import ContinueWithGoogleButton from '@/components/ui/continue-with-google-button';
-import { useSigninMutation } from '@/hooks/auth.hook';
-import { type SigninInput, signinSchema } from '@/schemas/auth.schema';
+import { useCheckAndSendPasswordResetEmailMutation } from '@/hooks/auth.hook';
+import {
+  type ForgotPasswordInput,
+  forgotPasswordSchema,
+} from '@/schemas/auth.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-export default function LoginForm() {
-  const { mutate: signin, isPending: isSigningIn } = useSigninMutation();
+export default function ForgotPasswordForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const {
+    mutate: checkAndSendPasswordResetEmail,
+    isPending: isCheckingEmailForPasswordReset,
+  } = useCheckAndSendPasswordResetEmailMutation();
+
+  const isLoading = isCheckingEmailForPasswordReset;
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SigninInput>({
-    resolver: zodResolver(signinSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+  } = useForm<ForgotPasswordInput>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
   });
 
-  const onSubmit = (data: SigninInput) => {
+  const onSubmit = async (data: ForgotPasswordInput) => {
     setErrorMessage(null);
+    setSuccessMessage(null);
 
-    signin(data, {
+    checkAndSendPasswordResetEmail(data.email, {
+      onSuccess: () => {
+        setSuccessMessage(
+          'Check your email for a link to reset your password.',
+        );
+      },
       onError: (error) => {
         const message =
-          error instanceof Error ? error.message : 'An unknown error occurred';
+          error instanceof Error ? error.message : 'Failed to send reset email';
         setErrorMessage(message);
       },
     });
@@ -69,16 +79,16 @@ export default function LoginForm() {
           textAlign: 'center',
         }}
       >
-        Sign in
+        Forgot password
       </Typography>
 
-      <ContinueWithGoogleButton fullWidth />
-
-      <Divider sx={{ my: 2, '&::before, &::after': { top: '50%' } }}>
-        <Typography variant='caption' color='text.secondary'>
-          or
-        </Typography>
-      </Divider>
+      <Typography
+        variant='body2'
+        color='text.secondary'
+        sx={{ mb: 2, textAlign: 'center' }}
+      >
+        Enter your email and we&apos;ll send you a link to reset your password.
+      </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
@@ -92,29 +102,6 @@ export default function LoginForm() {
           size='small'
           variant='outlined'
         />
-        <TextField
-          {...register('password')}
-          label='Password'
-          type='password'
-          error={!!errors.password}
-          helperText={errors.password?.message}
-          fullWidth
-          autoComplete='current-password'
-          size='small'
-          variant='outlined'
-        />
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Link
-            href='/reset-password'
-            style={{
-              fontSize: '0.875rem',
-              color: 'inherit',
-              textDecoration: 'underline',
-            }}
-          >
-            Forgot password?
-          </Link>
-        </Box>
 
         {errorMessage && (
           <Alert severity='error'>
@@ -122,15 +109,21 @@ export default function LoginForm() {
               errorMessage.slice(1).toLowerCase()}
           </Alert>
         )}
+        {successMessage && (
+          <Alert severity='success'>
+            {successMessage.charAt(0).toUpperCase() +
+              successMessage.slice(1).toLowerCase()}
+          </Alert>
+        )}
 
         <Button
           type='submit'
           variant='contained'
-          disabled={isSigningIn}
+          disabled={isLoading}
           fullWidth
           sx={{ py: 1.25, textTransform: 'none' }}
         >
-          {isSigningIn ? 'Signing in...' : 'Sign in'}
+          {isLoading ? 'Sending...' : 'Send reset link'}
         </Button>
       </Box>
 
@@ -139,12 +132,12 @@ export default function LoginForm() {
         color='text.secondary'
         sx={{ mt: 2, textAlign: 'center' }}
       >
-        Don&apos;t have an account?{' '}
+        Remember your password?{' '}
         <Link
-          href='/signup'
+          href='/signin'
           style={{ color: 'inherit', textDecoration: 'underline' }}
         >
-          Create account
+          Sign in
         </Link>
       </Typography>
     </Box>
