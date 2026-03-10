@@ -21,7 +21,7 @@ export function useSignupMutation() {
       toast.success(data.message);
     },
     onError: (error: unknown) => {
-      toast.error(getErrorMessage(error, 'Signup failed'));
+      console.log(error);
     },
   });
 }

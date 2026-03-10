@@ -128,7 +128,17 @@ export class AuthService {
         await this.userRepository.updateUser(decodedToken.uid, {
           emailVerified: userRecord.emailVerified,
         });
+        userData.emailVerified = userRecord.emailVerified;
       }
+    }
+
+    if (!userData.emailVerified) {
+      await this.emailService.sendVerificationLink(userData.email);
+      return {
+        success: false,
+        message:
+          'Email not verified. Please check your email for a verification link.',
+      };
     }
 
     return {

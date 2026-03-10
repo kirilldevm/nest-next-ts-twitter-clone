@@ -2,35 +2,26 @@
 
 import Link from '@/components/link';
 import ContinueWithGoogleButton from '@/components/ui/continue-with-google-button';
-import { auth, googleProvider } from '@/config/firebase.config';
-import { useAuth } from '@/context/auth.context';
-import {
-  useSigninWithGoogleMutation,
-  useSignupMutation,
-} from '@/hooks/auth.hook';
+import { useSignupMutation } from '@/hooks/auth.hook';
 import { type SignupInput, signupSchema } from '@/schemas/auth.schema';
-import { SigninWithGoogleResponse } from '@/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Input } from '@mui/material';
+import { Alert, Input } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 
 export default function RegisterForm() {
   const { mutate: signup, isPending: isSigningUp } = useSignupMutation();
-  const { mutate: signinWithGoogle, isPending: isSigningInWithGoogle } =
-    useSigninWithGoogleMutation();
-  const { signin } = useAuth();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const isLoading = isSigningUp || isSigningInWithGoogle;
+  const isLoading = isSigningUp;
 
   const {
     control,
@@ -52,43 +43,24 @@ export default function RegisterForm() {
   });
 
   const onSubmit = (data: SignupInput) => {
-    signup(data, {
-      onSuccess: async (response) => {
-        if (!('user' in response) || !response.user) {
-          toast.error(response.message);
-          reset();
-          return;
-        }
-        const credential = await signInWithEmailAndPassword(
-          auth,
-          data.email,
-          data.password,
-        );
-        const token = await credential.user.getIdToken();
-        signin({ user: response.user, token });
-      },
-    });
-  };
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
-  const handleGoogleSignUp = async () => {
-    const credential = await signInWithPopup(auth, googleProvider);
-    const token = await credential.user.getIdToken();
-    if (!token) {
-      toast.error('Failed to signin with Google');
-      return;
-    }
-    signinWithGoogle(token, {
-      onSuccess: (response: SigninWithGoogleResponse) => {
-        if (!('user' in response) || !response.user) {
-          toast.error(response.message);
-          return;
-        }
-        signin({ user: response.user, token });
+    signup(data, {
+      onSuccess: (response) => {
+        if ('message' in response) setSuccessMessage(response.message);
+        reset();
+      },
+      onError: (error) => {
+        const message =
+          error instanceof Error ? error.message : 'An unknown error occurred';
+        setErrorMessage(message);
       },
     });
   };
 
   const image = watch('profileImage');
+  const hasError = !!errorMessage || Object.keys(errors).length > 0;
 
   useEffect(() => {
     if (image) {
@@ -106,22 +78,27 @@ export default function RegisterForm() {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 2,
+        gap: 0.5,
         border: '1px solid',
-        borderColor: 'divider',
-        p: 2,
+        borderColor: hasError ? 'error.main' : 'divider',
+        py: 4,
+        px: 2,
         minWidth: 400,
       }}
     >
-      <Typography variant='h5' component='h1' sx={{ mb: 3, fontWeight: 500 }}>
+      <Typography
+        variant='h5'
+        component='h1'
+        sx={{
+          mb: 3,
+          fontWeight: 500,
+          textAlign: 'center',
+        }}
+      >
         Create account
       </Typography>
 
-      <ContinueWithGoogleButton
-        onClick={handleGoogleSignUp}
-        disabled={isLoading}
-        fullWidth
-      />
+      <ContinueWithGoogleButton fullWidth />
 
       <Divider sx={{ my: 2, '&::before, &::after': { top: '50%' } }}>
         <Typography variant='caption' color='text.secondary'>
@@ -222,9 +199,20 @@ export default function RegisterForm() {
           />
         </Box>
         {errors.profileImage && (
-          <Typography variant='caption' color='error'>
-            {errors.profileImage.message}
-          </Typography>
+          <Alert severity='error'>{errors.profileImage.message}</Alert>
+        )}
+
+        {errorMessage && (
+          <Alert severity='error'>
+            {errorMessage.charAt(0).toUpperCase() +
+              errorMessage.slice(1).toLowerCase()}
+          </Alert>
+        )}
+        {successMessage && (
+          <Alert severity='success'>
+            {successMessage.charAt(0).toUpperCase() +
+              successMessage.slice(1).toLowerCase()}
+          </Alert>
         )}
 
         <Button

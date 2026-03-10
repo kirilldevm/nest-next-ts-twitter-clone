@@ -1,15 +1,16 @@
 import { ENDPOINTS } from '@/config/endpoints.config';
 import api from '@/lib/api';
+import { isAxiosError } from 'axios';
 import { type SignupInput } from '@/schemas/auth.schema';
+import {
+  deleteProfileImage,
+  uploadProfileImage,
+} from '@/services/storage.service';
 import type {
   SigninResponse,
   SigninWithGoogleResponse,
   SignupResponse,
 } from '@/types';
-import {
-  deleteProfileImage,
-  uploadProfileImage,
-} from '@/services/storage.service';
 
 export class AuthService {
   async signup(data: SignupInput) {
@@ -35,6 +36,11 @@ export class AuthService {
         lastName: rest.lastName,
         profileImageUrl,
       });
+
+      if ('error' in response.data) {
+        throw new Error(response.data.message);
+      }
+
       return response.data;
     } catch (error) {
       if (uploadedPath) {
@@ -43,6 +49,9 @@ export class AuthService {
         } catch {
           // Best-effort cleanup, ignore deletion errors
         }
+      }
+      if (isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(String(error.response.data.message));
       }
       throw error;
     }

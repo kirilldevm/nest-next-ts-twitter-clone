@@ -18,12 +18,14 @@ export class EmailService {
       .generateEmailVerificationLink(email);
 
     const verifyUrl = new URL(verificationLink);
-    const frontedUrl = process.env.CORS_ORIGIN || 'http://localhost:3000';
+    const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+    const frontendUrl = corsOrigin.split(',')[0].trim();
     const oobCode = verifyUrl.searchParams.get('oobCode');
-    const verifyLink = `${frontedUrl}/verify-email?oobCode=${oobCode}`;
+    const verifyLink = `${frontendUrl}/verify-email?oobCode=${oobCode}`;
 
-    const from = process.env.RESEND_FROM || 'noreply@twitterclone.dev';
-    await this.getResend().emails.send({
+    // Use onboarding@resend.dev for testing (no domain verification needed)
+    const from = process.env.RESEND_FROM || 'onboarding@resend.dev';
+    const { error } = await this.getResend().emails.send({
       from: `Twitter Clone <${from}>`,
       to: email,
       subject: 'Verify your email',
@@ -32,5 +34,9 @@ export class EmailService {
         <p>Click <a href="${verifyLink}">here</a> to verify your email</p>
       </div>`,
     });
+
+    if (error) {
+      throw new Error(`Resend API: ${error.message} (${error.name})`);
+    }
   }
 }
