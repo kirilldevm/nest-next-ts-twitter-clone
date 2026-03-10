@@ -66,6 +66,7 @@ let UserRepository = class UserRepository {
     }
     async createUser(data) {
         await this.usersDb.doc(data.id).set(data);
+        return this.getUser(data.id);
     }
     async deleteUser(id) {
         await this.usersDb.doc(id).delete();

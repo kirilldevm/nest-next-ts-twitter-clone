@@ -1,14 +1,16 @@
 'use client';
 
 import Link from '@/components/link';
-import { auth } from '@/config/firebase.config';
+import { useAuth } from '@/context/auth.context';
+import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import MaterialUILink from '@mui/material/Link';
-import { signOut } from 'firebase/auth';
 
 export default function Home() {
+  const { user, logout } = useAuth();
+  console.log(user);
   return (
     <Container maxWidth='lg'>
       <Box
@@ -20,17 +22,16 @@ export default function Home() {
           alignItems: 'center',
         }}
       >
+        {user && (
+          <Box>
+            <Typography variant='h6'>{user.email}</Typography>
+          </Box>
+        )}
         <Button
           variant='contained'
           color='primary'
           onClick={() => {
-            signOut(auth)
-              .then(() => {
-                console.log('signed out');
-              })
-              .catch((error) => {
-                console.error(error);
-              });
+            logout();
           }}
         >
           Sign Out

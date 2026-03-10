@@ -72,12 +72,15 @@ const origins = (process.env.CORS_ORIGIN ?? '')
 ];
 const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 const server = (0, express_1.default)();
+server.use(express_1.default.json({ limit: '10mb' }));
+server.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
 server.use((0, cors_1.default)({
     origin: (requestOrigin, callback) => {
         if (!requestOrigin) {
             callback(null, true);
         }
-        else if (origins.includes(requestOrigin) || isLocalOrigin(requestOrigin)) {
+        else if (origins.includes(requestOrigin) ||
+            isLocalOrigin(requestOrigin)) {
             callback(null, requestOrigin);
         }
         else {

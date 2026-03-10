@@ -14,18 +14,16 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
-const platform_express_1 = require("@nestjs/platform-express");
-const multer_config_1 = require("../common/multer.config");
 const auth_service_1 = require("./auth.service");
+const create_user_dto_1 = require("./dto/create-user.dto");
 const signin_dto_1 = require("./dto/signin.dto");
-const signup_form_dto_1 = require("./dto/signup-form.dto");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
         this.authService = authService;
     }
-    signup(signupForm, file) {
-        return this.authService.signupWithFile(signupForm, file);
+    signup(signupForm) {
+        return this.authService.signup(signupForm);
     }
     signin(signinDto) {
         return this.authService.signin(signinDto);
@@ -37,11 +35,9 @@ let AuthController = class AuthController {
 exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('signup'),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('profileImage', multer_config_1.profileImageMulterOptions)),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [signup_form_dto_1.SignupFormDto, Object]),
+    __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "signup", null);
 __decorate([

@@ -47,30 +47,13 @@ const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
 const error_utils_1 = require("../common/error.utils");
 const email_service_1 = require("../email/email.service");
-const storage_service_1 = require("../storage/storage.service");
 const user_repository_1 = require("../user/repository/user.repository");
 let AuthService = class AuthService {
     userRepository;
     emailService;
-    storageService;
-    constructor(userRepository, emailService, storageService) {
+    constructor(userRepository, emailService) {
         this.userRepository = userRepository;
         this.emailService = emailService;
-        this.storageService = storageService;
-    }
-    async signupWithFile(signupForm, file) {
-        let profileImageUrl = null;
-        if (file?.buffer) {
-            profileImageUrl = await this.storageService.uploadProfileImage(Buffer.from(file.buffer), file.mimetype, file.originalname);
-        }
-        const createUserDto = {
-            email: signupForm.email,
-            password: signupForm.password,
-            firstName: signupForm.firstName,
-            lastName: signupForm.lastName,
-            profileImageUrl: profileImageUrl || undefined,
-        };
-        return this.signup(createUserDto);
     }
     async signup(createUserDto) {
         const { email, password, firstName, lastName, profileImageUrl } = createUserDto;
@@ -83,12 +66,15 @@ let AuthService = class AuthService {
             ? profileImageUrl.trim()
             : null;
         if (trimmedPhoto) {
-            const parsed = new URL(trimmedPhoto);
-            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+            try {
+                new URL(trimmedPhoto);
                 createUserOptions.photoURL = trimmedPhoto;
+            }
+            catch {
             }
         }
         let userRecord;
+        let userData;
         try {
             userRecord = await admin.auth().createUser(createUserOptions);
         }
@@ -104,7 +90,7 @@ let AuthService = class AuthService {
             throw err;
         }
         try {
-            await this.userRepository.createUser({
+            const user = await this.userRepository.createUser({
                 id: userRecord.uid,
                 email: userRecord.email || '',
                 firstName,
@@ -115,6 +101,7 @@ let AuthService = class AuthService {
                 createdAt: new Date(),
                 emailVerified: false,
             });
+            userData = user;
             try {
                 await this.emailService.sendVerificationLink(email);
             }
@@ -124,6 +111,7 @@ let AuthService = class AuthService {
             return {
                 success: true,
                 message: 'User created successfully',
+                user: userData,
             };
         }
         catch (err) {
@@ -211,7 +199,6 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [user_repository_1.UserRepository,
-        email_service_1.EmailService,
-        storage_service_1.StorageService])
+        email_service_1.EmailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

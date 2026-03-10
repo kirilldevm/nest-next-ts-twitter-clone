@@ -6,40 +6,17 @@ import {
 import * as admin from 'firebase-admin';
 import { getErrorMessage, isFirebaseAuthError } from 'src/common/error.utils';
 import { EmailService } from 'src/email/email.service';
-import { StorageService } from 'src/storage/storage.service';
 import { User } from 'src/user/entity/user.entity';
 import { UserRepository } from 'src/user/repository/user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { SigninDto } from './dto/signin.dto';
-import type { SignupFormDto } from './dto/signup-form.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly emailService: EmailService,
-    private readonly storageService: StorageService,
   ) {}
-
-  async signupWithFile(signupForm: SignupFormDto, file?: Express.Multer.File) {
-    let profileImageUrl: string | null = null;
-    if (file?.buffer) {
-      profileImageUrl = await this.storageService.uploadProfileImage(
-        Buffer.from(file.buffer),
-        file.mimetype,
-        file.originalname,
-      );
-    }
-
-    const createUserDto: CreateUserDto = {
-      email: signupForm.email,
-      password: signupForm.password,
-      firstName: signupForm.firstName,
-      lastName: signupForm.lastName,
-      profileImageUrl: profileImageUrl || undefined,
-    };
-    return this.signup(createUserDto);
-  }
 
   async signup(createUserDto: CreateUserDto) {
     const { email, password, firstName, lastName, profileImageUrl } =
@@ -55,13 +32,16 @@ export class AuthService {
         ? profileImageUrl.trim()
         : null;
     if (trimmedPhoto) {
-      const parsed = new URL(trimmedPhoto);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      try {
+        new URL(trimmedPhoto);
         createUserOptions.photoURL = trimmedPhoto;
+      } catch {
+        // Invalid URL, skip photoURL
       }
     }
 
     let userRecord: admin.auth.UserRecord;
+    let userData: User;
     try {
       userRecord = await admin.auth().createUser(createUserOptions);
     } catch (err) {
@@ -77,7 +57,7 @@ export class AuthService {
     }
 
     try {
-      await this.userRepository.createUser({
+      const user = await this.userRepository.createUser({
         id: userRecord.uid,
         email: userRecord.email || '',
         firstName,
@@ -89,7 +69,7 @@ export class AuthService {
         createdAt: new Date(),
         emailVerified: false,
       });
-
+      userData = user!;
       // Send verification email
       try {
         await this.emailService.sendVerificationLink(email);
@@ -102,6 +82,7 @@ export class AuthService {
       return {
         success: true,
         message: 'User created successfully',
+        user: userData,
       };
     } catch (err) {
       await admin.auth().deleteUser(userRecord.uid);

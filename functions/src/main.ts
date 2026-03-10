@@ -3,6 +3,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import cors from 'cors';
 import express from 'express';
+
 import * as admin from 'firebase-admin';
 import * as functions from 'firebase-functions';
 import helmet from 'helmet';
@@ -38,6 +39,9 @@ const isLocalOrigin = (origin: string) =>
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
 const server = express();
+
+server.use(express.json({ limit: '10mb' }));
+server.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 server.use(
   cors({

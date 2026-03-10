@@ -27,13 +27,14 @@ export class UserRepository {
     } as User;
   }
 
-  async getUser(id: string) {
+  async getUser(id: string): Promise<User | null> {
     const user = await this.usersDb.doc(id).get();
     return this.mapDoc(user);
   }
 
-  async createUser(data: User) {
+  async createUser(data: User): Promise<User | null> {
     await this.usersDb.doc(data.id).set(data);
+    return this.getUser(data.id);
   }
 
   async deleteUser(id: string) {

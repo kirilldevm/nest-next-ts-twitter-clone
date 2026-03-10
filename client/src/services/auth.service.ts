@@ -6,6 +6,10 @@ import type {
   SigninWithGoogleResponse,
   SignupResponse,
 } from '@/types';
+import {
+  deleteProfileImage,
+  uploadProfileImage,
+} from '@/services/storage.service';
 
 export class AuthService {
   async signup(data: SignupInput) {
@@ -14,26 +18,34 @@ export class AuthService {
       throw new Error('Passwords do not match');
     }
 
-    if (profileImage) {
-      const formData = new FormData();
-      formData.append('email', rest.email);
-      formData.append('password', rest.password);
-      formData.append('firstName', rest.firstName);
-      formData.append('lastName', rest.lastName);
-      formData.append('profileImage', profileImage);
+    let profileImageUrl: string | undefined;
+    let uploadedPath: string | undefined;
 
-      const response = await api.post<SignupResponse>(
-        ENDPOINTS.AUTH.SIGNUP,
-        formData,
-      );
-      return response.data;
+    if (profileImage) {
+      const result = await uploadProfileImage(profileImage);
+      profileImageUrl = result.url;
+      uploadedPath = result.path;
     }
 
-    const response = await api.post<SignupResponse>(
-      ENDPOINTS.AUTH.SIGNUP,
-      rest,
-    );
-    return response.data;
+    try {
+      const response = await api.post<SignupResponse>(ENDPOINTS.AUTH.SIGNUP, {
+        email: rest.email,
+        password: rest.password,
+        firstName: rest.firstName,
+        lastName: rest.lastName,
+        profileImageUrl,
+      });
+      return response.data;
+    } catch (error) {
+      if (uploadedPath) {
+        try {
+          await deleteProfileImage(uploadedPath);
+        } catch {
+          // Best-effort cleanup, ignore deletion errors
+        }
+      }
+      throw error;
+    }
   }
 
   async signin(token: string) {
