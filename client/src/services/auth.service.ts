@@ -13,6 +13,7 @@ import type {
 } from '@/types';
 import { isAxiosError } from 'axios';
 import {
+  fetchSignInMethodsForEmail,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
@@ -97,20 +98,32 @@ export class AuthService {
         throw new Error(String(error.response.data.message));
       }
 
-      if (error instanceof Error && 'code' in error) {
-        const code = (error as Error & { code?: string }).code;
-        if (
-          code === 'auth/invalid-credential' ||
-          code === 'auth/wrong-password'
-        ) {
-          throw new Error('Invalid email or password');
+      const authError = error as Error & { code?: string };
+      const code = authError.code ?? '';
+      const message = authError.message ?? '';
+      const isInvalidCredential =
+        code === 'auth/invalid-credential' ||
+        code === 'auth/invalid-login-credentials' ||
+        code === 'auth/wrong-password' ||
+        message.includes('INVALID_LOGIN_CREDENTIALS');
+
+      if (isInvalidCredential) {
+        const methods = await fetchSignInMethodsForEmail(auth, data.email);
+        if (methods.includes('google.com')) {
+          throw new Error(
+            methods.includes('password')
+              ? 'Invalid email or password. You can also sign in with Google using the button above.'
+              : 'This account uses Google sign-in. Please use the Google button above.',
+          );
         }
-        if (code === 'auth/user-not-found') {
-          throw new Error('No account found with this email');
-        }
-        if (code === 'auth/invalid-email') {
-          throw new Error('Invalid email address');
-        }
+        throw new Error('Invalid email or password');
+      }
+
+      if (code === 'auth/user-not-found') {
+        throw new Error('No account found with this email');
+      }
+      if (code === 'auth/invalid-email') {
+        throw new Error('Invalid email address');
       }
 
       throw error;
