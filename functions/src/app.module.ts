@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { EmailModule } from './email/email.module';
+import { PostModule } from './post/post.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { EmailModule } from './email/email.module';
     AuthModule,
     UserModule,
     EmailModule,
+    PostModule,
   ],
   controllers: [AppController],
   providers: [AppService],
