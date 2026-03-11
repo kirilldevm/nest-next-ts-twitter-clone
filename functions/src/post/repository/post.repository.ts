@@ -11,7 +11,7 @@ export class PostRepository {
 
   private mapDoc(doc: admin.firestore.DocumentSnapshot): Post | null {
     if (!doc.exists) return null;
-    const data = doc.data();
+    const data = doc.data() as Post;
     if (!data) return null;
 
     return {
@@ -24,12 +24,12 @@ export class PostRepository {
         data.createdAt &&
         typeof data.createdAt === 'object' &&
         'toDate' in data.createdAt
-          ? (data.createdAt as admin.firestore.Timestamp).toDate()
-          : new Date(data.createdAt as string | number),
+          ? (data.createdAt as unknown as admin.firestore.Timestamp).toDate()
+          : new Date(data.createdAt as unknown as string | number),
       likesCount: data.likesCount ?? 0,
       dislikesCount: data.dislikesCount ?? 0,
       commentsCount: data.commentsCount ?? 0,
-    } as Post;
+    };
   }
 
   async getPost(id: string): Promise<Post | null> {
@@ -59,7 +59,7 @@ export class PostRepository {
 
     if (!doc.exists) return null;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     const {
       id: _id,
       authorId: _authorId,

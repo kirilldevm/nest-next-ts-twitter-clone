@@ -30,7 +30,11 @@ export const apiAuthPrefix = '/api/auth';
  * Routes that require authentication
  * @type {string[]}
  */
-export const protectedRoutes = [PAGES.SETTINGS, PAGES.PROFILE];
+export const protectedRoutes = [
+  PAGES.SETTINGS,
+  PAGES.PROFILE,
+  PAGES.POST_CREATE,
+];
 
 /**
  * The default route to redirect logged in users to

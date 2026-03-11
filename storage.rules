@@ -4,7 +4,12 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /profile-images/{allPaths=**} {
       allow read: if true;
-      // delete: request.resource is null; create/update: validate size and type
+      allow write: if request.resource == null
+        || (request.resource.size < 5 * 1024 * 1024
+            && request.resource.contentType.matches('image/.*'));
+    }
+    match /post-images/{allPaths=**} {
+      allow read: if true;
       allow write: if request.resource == null
         || (request.resource.size < 5 * 1024 * 1024
             && request.resource.contentType.matches('image/.*'));

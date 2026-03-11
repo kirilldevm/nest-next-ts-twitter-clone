@@ -32,6 +32,12 @@ export default function Header() {
       },
     },
     {
+      label: 'New post',
+      onClick: () => {
+        router.push(PAGES.POST_CREATE);
+      },
+    },
+    {
       label: 'Settings',
       onClick: () => {
         router.push(PAGES.SETTINGS);

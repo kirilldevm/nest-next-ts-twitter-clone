@@ -9,4 +9,8 @@ export const ENDPOINTS = {
     ME: '/user',
     BY_ID: (id: string) => `/user/${id}`,
   },
+  POST: {
+    LIST: '/post',
+    BY_ID: (id: string) => `/post/${id}`,
+  },
 };
