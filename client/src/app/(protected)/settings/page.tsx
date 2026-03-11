@@ -1,7 +1,7 @@
 import ChangePassword from '@/components/settings/change-password';
 import DeleteProfile from '@/components/settings/delete-profile';
 import EditDetails from '@/components/settings/edit-details';
-import { Container, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 
 export default function SettingsPage() {
   return (

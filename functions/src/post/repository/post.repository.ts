@@ -26,6 +26,9 @@ export class PostRepository {
         'toDate' in data.createdAt
           ? (data.createdAt as admin.firestore.Timestamp).toDate()
           : new Date(data.createdAt as string | number),
+      likesCount: data.likesCount ?? 0,
+      dislikesCount: data.dislikesCount ?? 0,
+      commentsCount: data.commentsCount ?? 0,
     } as Post;
   }
 

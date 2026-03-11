@@ -18,6 +18,9 @@ export class PostService {
       text: dto.text,
       photoURL: dto.photoURL ?? null,
       createdAt: new Date(),
+      likesCount: 0,
+      dislikesCount: 0,
+      commentsCount: 0,
     });
   }
 

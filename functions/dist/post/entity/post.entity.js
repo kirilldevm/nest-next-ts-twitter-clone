@@ -8,6 +8,9 @@ class Post {
     text;
     photoURL;
     createdAt;
+    likesCount;
+    dislikesCount;
+    commentsCount;
 }
 exports.Post = Post;
 //# sourceMappingURL=post.entity.js.map

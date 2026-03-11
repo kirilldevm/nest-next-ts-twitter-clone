@@ -3,8 +3,8 @@
 import Link from '@/components/link';
 import { PAGES } from '@/config/pages.config';
 import { useAuth } from '@/context/auth.context';
+import { getDisplayName } from '@/helpers/get-display-name';
 import { useUser } from '@/hooks/user.hook';
-import type { User } from '@/types';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,12 +15,6 @@ import Typography from '@mui/material/Typography';
 type ProfilePageProps = {
   userId?: string;
 };
-
-function getDisplayName(user: User | null | undefined): string {
-  if (!user) return '';
-  const names = [user.firstName, user.lastName].filter(Boolean);
-  return names.length > 0 ? names.join(' ') : (user.email ?? '');
-}
 
 export default function ProfilePage({ userId }: ProfilePageProps) {
   const { user: authUser } = useAuth();
@@ -77,7 +71,7 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
           alt={getDisplayName(user)}
           sx={{ width: 120, height: 120 }}
         >
-          {(user.firstName?.[0] ?? user.email[0] ?? '?').toUpperCase()}
+          {getDisplayName(user)[0].toUpperCase()}
         </Avatar>
 
         <Box
@@ -95,12 +89,13 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
               justifyContent: { xs: 'center', sm: 'flex-start' },
             }}
           >
+            {/* TODO: Add posts count */}
             <Typography variant='body2'>
               <strong>0</strong> posts
             </Typography>
           </Box>
 
-          {isOwnProfile ? (
+          {isOwnProfile && (
             <Link href={PAGES.SETTINGS} style={{ textDecoration: 'none' }}>
               <Button
                 variant='outlined'
@@ -110,15 +105,6 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
                 Edit profile
               </Button>
             </Link>
-          ) : (
-            <Button
-              variant='contained'
-              size='small'
-              disabled
-              sx={{ textTransform: 'none' }}
-            >
-              Follow
-            </Button>
           )}
         </Box>
       </Box>

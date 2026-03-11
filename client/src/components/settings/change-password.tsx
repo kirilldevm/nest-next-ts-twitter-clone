@@ -42,7 +42,12 @@ export default function ChangePassword() {
     return () => unsub();
   }, []);
 
-  const passwordForm = useForm<ChangePasswordFormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
       currentPassword: '',
@@ -57,7 +62,7 @@ export default function ChangePassword() {
     changePassword(data, {
       onSuccess: () => {
         setPasswordSuccess('Password changed successfully');
-        passwordForm.reset();
+        reset();
       },
       onError: (error) => {
         const err = error as { code?: string };
@@ -87,37 +92,33 @@ export default function ChangePassword() {
             </Typography>
             <Box
               component='form'
-              onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+              onSubmit={handleSubmit(onPasswordSubmit)}
               sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
             >
               <TextField
-                {...passwordForm.register('currentPassword')}
+                {...register('currentPassword')}
                 label='Current password'
                 type='password'
-                error={!!passwordForm.formState.errors.currentPassword}
-                helperText={
-                  passwordForm.formState.errors.currentPassword?.message
-                }
+                error={!!errors.currentPassword}
+                helperText={errors.currentPassword?.message}
                 fullWidth
                 size='small'
               />
               <TextField
-                {...passwordForm.register('newPassword')}
+                {...register('newPassword')}
                 label='New password'
                 type='password'
-                error={!!passwordForm.formState.errors.newPassword}
-                helperText={passwordForm.formState.errors.newPassword?.message}
+                error={!!errors.newPassword}
+                helperText={errors.newPassword?.message}
                 fullWidth
                 size='small'
               />
               <TextField
-                {...passwordForm.register('confirmPassword')}
+                {...register('confirmPassword')}
                 label='Confirm new password'
                 type='password'
-                error={!!passwordForm.formState.errors.confirmPassword}
-                helperText={
-                  passwordForm.formState.errors.confirmPassword?.message
-                }
+                error={!!errors.confirmPassword}
+                helperText={errors.confirmPassword?.message}
                 fullWidth
                 size='small'
               />

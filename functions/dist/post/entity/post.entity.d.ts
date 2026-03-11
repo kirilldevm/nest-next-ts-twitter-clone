@@ -5,4 +5,7 @@ export declare class Post {
     text: string;
     photoURL?: string | null;
     createdAt: Date;
+    likesCount: number;
+    dislikesCount: number;
+    commentsCount: number;
 }

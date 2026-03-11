@@ -31,7 +31,14 @@ export default function EditDetails() {
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  const profileForm = useForm<UpdateProfileFormData>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    register,
+    formState: { errors },
+  } = useForm<UpdateProfileFormData>({
     resolver: zodResolver(updateProfileSchema),
     defaultValues: {
       firstName: user?.firstName ?? '',
@@ -40,7 +47,7 @@ export default function EditDetails() {
     },
   });
 
-  const photoURL = profileForm.watch('photoURL');
+  const photoURL = watch('photoURL');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,12 +61,12 @@ export default function EditDetails() {
 
   useEffect(() => {
     if (user) {
-      profileForm.reset({
+      reset({
         firstName: user.firstName ?? '',
         lastName: user.lastName ?? '',
       });
     }
-  }, [user, profileForm]);
+  }, [user, reset]);
 
   function onProfileSubmit(data: UpdateProfileFormData) {
     setProfileError(null);
@@ -67,7 +74,7 @@ export default function EditDetails() {
     updateProfile(data, {
       onSuccess: () => {
         setProfileSuccess('Profile updated successfully');
-        profileForm.reset({ ...data, photoURL: undefined });
+        reset({ ...data, photoURL: undefined });
       },
       onError: (error) => {
         setProfileError(error.message);
@@ -87,7 +94,7 @@ export default function EditDetails() {
         </Typography>
         <Box
           component='form'
-          onSubmit={profileForm.handleSubmit(onProfileSubmit)}
+          onSubmit={handleSubmit(onProfileSubmit)}
           sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -108,7 +115,7 @@ export default function EditDetails() {
               </Typography>
               <Controller
                 name='photoURL'
-                control={profileForm.control}
+                control={control}
                 render={({ field: { onChange, ref } }) => (
                   <Input
                     inputRef={ref}
@@ -123,26 +130,26 @@ export default function EditDetails() {
                   />
                 )}
               />
-              {profileForm.formState.errors.photoURL && (
+              {errors.photoURL && (
                 <Alert severity='error' sx={{ mt: 0.5 }}>
-                  {profileForm.formState.errors.photoURL.message}
+                  {errors.photoURL.message}
                 </Alert>
               )}
             </Box>
           </Box>
           <TextField
-            {...profileForm.register('firstName')}
+            {...register('firstName')}
             label='First name'
-            error={!!profileForm.formState.errors.firstName}
-            helperText={profileForm.formState.errors.firstName?.message}
+            error={!!errors.firstName}
+            helperText={errors.firstName?.message}
             fullWidth
             size='small'
           />
           <TextField
-            {...profileForm.register('lastName')}
+            {...register('lastName')}
             label='Last name'
-            error={!!profileForm.formState.errors.lastName}
-            helperText={profileForm.formState.errors.lastName?.message}
+            error={!!errors.lastName}
+            helperText={errors.lastName?.message}
             fullWidth
             size='small'
           />
