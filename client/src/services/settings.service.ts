@@ -98,11 +98,6 @@ export class SettingsService {
       throw error;
     }
   }
-
-  async getUser(id: string): Promise<User | null> {
-    const response = await api.get<User | null>(ENDPOINTS.USER.BY_ID(id));
-    return response.data;
-  }
 }
 
 export const settingsService = new SettingsService();

@@ -12,4 +12,5 @@ export const PAGES = {
   // Protected
   SETTINGS: '/settings',
   PROFILE: '/profile',
+  PROFILE_BY_ID: (id: string) => `/profile/${id}`,
 } as const;
