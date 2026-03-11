@@ -16,6 +16,7 @@ exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
 const auth_guard_1 = require("../auth/guard/auth.guard");
 const user_service_1 = require("./user.service");
+const update_user_dto_1 = require("./dto/update-user.dto");
 let UserController = class UserController {
     userService;
     constructor(userService) {
@@ -23,6 +24,9 @@ let UserController = class UserController {
     }
     getUser(id) {
         return this.userService.getUser(id);
+    }
+    updateUser(req, updateUserDto) {
+        return this.userService.updateUser(req.user.uid, updateUserDto);
     }
     deleteUser(req) {
         return this.userService.deleteUser(req.user.uid);
@@ -36,6 +40,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "getUser", null);
+__decorate([
+    (0, common_1.Patch)(''),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)(''),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),

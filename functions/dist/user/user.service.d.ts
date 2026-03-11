@@ -5,5 +5,5 @@ export declare class UserService {
     constructor(userRepository: UserRepository);
     getUser(id: string): Promise<import("./entity/user.entity").User | null>;
     deleteUser(uid: string): Promise<void>;
-    updateUser(uid: string, updateUserDto: UpdateUserDto): Promise<void>;
+    updateUser(uid: string, updateUserDto: UpdateUserDto): Promise<import("./entity/user.entity").User | null>;
 }

@@ -24,10 +24,7 @@ export default function RootLayout({
           <Toaster position='bottom-right' richColors />
           <CssBaseline />
           <QueryProvider>
-            <AuthProvider>
-              <Header />
-              {children}
-            </AuthProvider>
+            <AuthProvider>{children}</AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

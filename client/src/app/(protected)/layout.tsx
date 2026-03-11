@@ -1,7 +1,9 @@
 'use client';
 
-import { useAuth } from '@/context/auth.context';
+import Header from '@/components/ui/header';
 import { authRoutes } from '@/config/routes.config';
+import { useAuth } from '@/context/auth.context';
+import { Container } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -25,8 +27,8 @@ export default function ProtectedLayout({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className='flex min-h-screen items-center justify-center'>
+        <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
       </div>
     );
   }
@@ -35,5 +37,12 @@ export default function ProtectedLayout({
     return null; // Redirecting
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <Header />
+      <Container maxWidth='md' component='main' sx={{ py: 4 }}>
+        {children}
+      </Container>
+    </>
+  );
 }

@@ -4,7 +4,7 @@ export const PAGES = {
   //Auth
   LOGIN: '/signin',
   REGISTER: '/signup',
-  FORGOT_PASSWORD: '/forgot-password',
+  FORGOT_PASSWORD: '/reset-password',
   // NEW_PASSWORD: '/new-password',
   ERROR: '/error',
   VERIFY: '/verify',

@@ -5,4 +5,8 @@ export const ENDPOINTS = {
     SIGNIN_WITH_GOOGLE: '/auth/signin-with-google',
     FORGOT_PASSWORD: '/auth/forgot-password',
   },
+  USER: {
+    ME: '/user',
+    BY_ID: (id: string) => `/user/${id}`,
+  },
 };

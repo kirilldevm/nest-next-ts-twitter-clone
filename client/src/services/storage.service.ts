@@ -36,3 +36,8 @@ export async function deleteProfileImage(path: string): Promise<void> {
   const storageRef = ref(storage, path);
   await deleteObject(storageRef);
 }
+
+export async function deleteProfileImageByUrl(url: string): Promise<void> {
+  const storageRef = ref(storage, url);
+  await deleteObject(storageRef);
+}
