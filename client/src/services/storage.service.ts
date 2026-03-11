@@ -41,3 +41,35 @@ export async function deleteProfileImageByUrl(url: string): Promise<void> {
   const storageRef = ref(storage, url);
   await deleteObject(storageRef);
 }
+
+const DELETE_RETRY_ATTEMPTS = 3;
+const DELETE_RETRY_DELAY_MS = 500;
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Best-effort delete of old profile image with retries. Fails silently
+ * for external URLs (e.g. Google avatar) or transient errors.
+ */
+export async function deleteOldProfileImage(url: string): Promise<void> {
+  if (!url || !url.startsWith('https://firebasestorage.googleapis.com')) {
+    return;
+  }
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= DELETE_RETRY_ATTEMPTS; attempt++) {
+    try {
+      await deleteProfileImageByUrl(url);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < DELETE_RETRY_ATTEMPTS) {
+        await sleep(DELETE_RETRY_DELAY_MS);
+      }
+    }
+  }
+  // Log but don't throw - orphaned image is acceptable; user has new photo
+  console.warn('Failed to delete old profile image after retries:', lastError);
+}

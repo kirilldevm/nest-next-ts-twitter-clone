@@ -13,8 +13,8 @@ import {
   updatePassword,
 } from 'firebase/auth';
 import {
+  deleteOldProfileImage,
   deleteProfileImage,
-  deleteProfileImageByUrl,
   uploadProfileImage,
 } from '@/services/storage.service';
 
@@ -35,18 +35,18 @@ export class SettingsService {
     }
 
     try {
-      if (newPhotoURL && currentPhotoURL) {
-        try {
-          await deleteProfileImageByUrl(currentPhotoURL);
-        } catch {
-          // Old image may not exist or URL may be external (e.g. Google avatar)
-        }
-      }
-
       const response = await api.patch<User>(ENDPOINTS.USER.ME, {
         ...rest,
         photoURL: newPhotoURL,
       });
+
+      // Delete old image only AFTER server has accepted the new one.
+      // Prevents orphaned new uploads and avoids deleting old before we're sure
+      // the update succeeded.
+      if (newPhotoURL && currentPhotoURL) {
+        await deleteOldProfileImage(currentPhotoURL);
+      }
+
       return response.data;
     } catch (error) {
       if (uploadedPath) {
