@@ -223,10 +223,10 @@ export default function RegisterForm() {
                 />
               )}
             />
-            {errors.profileImage && (
-              <Alert severity='error'>{errors.profileImage.message}</Alert>
-            )}
           </Box>
+          {errors.profileImage && (
+            <Alert severity='error'>{errors.profileImage.message}</Alert>
+          )}
         </Stack>
 
         {errorMessage && (

@@ -7,4 +7,8 @@ export const QUERY_KEYS = {
     LIST: ['post', 'list'] as const,
     BY_ID: (id: string) => ['post', id] as const,
   },
+  POSTS: {
+    LIST: (authorId?: string) =>
+      authorId ? ['posts', 'list', authorId] : ['posts', 'list'],
+  },
 };

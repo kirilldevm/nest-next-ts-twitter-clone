@@ -23,10 +23,12 @@ export default function ContinueWithGoogleButton({
   const handleGoogleSignIn = async () => {
     const credential = await signInWithPopup(auth, googleProvider);
     const token = await credential.user.getIdToken();
+
     if (!token) {
       toast.error('Failed to signin with Google');
       return;
     }
+
     signinWithGoogle(token, {
       onSuccess: (response: SigninWithGoogleResponse) => {
         if (!('user' in response) || !response.user) {
