@@ -5,14 +5,14 @@ import ContinueWithGoogleButton from '@/components/ui/continue-with-google-butto
 import { useSignupMutation } from '@/hooks/auth.hook';
 import { type SignupInput, signupSchema } from '@/schemas/auth.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Input } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { Alert, Avatar, IconButton, Input, Stack } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 export default function RegisterForm() {
@@ -20,6 +20,7 @@ export default function RegisterForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const isLoading = isSigningUp;
 
@@ -29,6 +30,7 @@ export default function RegisterForm() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -69,6 +71,14 @@ export default function RegisterForm() {
       setImagePreview(null);
     }
   }, [image]);
+
+  function handleClearPhoto() {
+    setValue('profileImage', undefined);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+    }
+    setImagePreview(null);
+  }
 
   return (
     <Box
@@ -117,6 +127,7 @@ export default function RegisterForm() {
           size='small'
           variant='outlined'
         />
+
         <TextField
           {...register('lastName')}
           label='Last name'
@@ -127,6 +138,7 @@ export default function RegisterForm() {
           size='small'
           variant='outlined'
         />
+
         <TextField
           {...register('email')}
           label='Email'
@@ -138,6 +150,7 @@ export default function RegisterForm() {
           size='small'
           variant='outlined'
         />
+
         <TextField
           {...register('password')}
           label='Password'
@@ -149,6 +162,7 @@ export default function RegisterForm() {
           size='small'
           variant='outlined'
         />
+
         <TextField
           {...register('confirmPassword')}
           label='Confirm password'
@@ -161,46 +175,59 @@ export default function RegisterForm() {
           variant='outlined'
         />
 
-        <Box>
+        <Stack direction='column' gap={1}>
           <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
             Profile image (optional)
           </Typography>
-          {imagePreview && (
-            <Box sx={{ mb: 1 }}>
-              <Image
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {imagePreview ? (
+              <Avatar
                 src={imagePreview}
                 alt='Profile image'
-                width={100}
-                height={100}
-                className='rounded-full'
-                style={{ objectFit: 'cover' }}
+                sx={{ width: 80, height: 80 }}
               />
-            </Box>
-          )}
-          <Controller
-            name='profileImage'
-            control={control}
-            render={({ field: { onChange, ref } }) => (
-              <Input
-                inputRef={ref}
-                type='file'
-                inputProps={{
-                  accept: 'image/jpeg,image/png,image/webp,image/gif',
-                }}
-                disableUnderline
-                sx={{ fontSize: '0.875rem' }}
-                fullWidth
-                onChange={(e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  onChange(file ?? undefined);
-                }}
+            ) : (
+              <Avatar
+                sx={{ width: 80, height: 80 }}
+                src='user-200.png'
+                alt='No user image'
               />
             )}
-          />
-        </Box>
-        {errors.profileImage && (
-          <Alert severity='error'>{errors.profileImage.message}</Alert>
-        )}
+            <Controller
+              name='profileImage'
+              control={control}
+              render={({ field: { onChange, ref } }) => (
+                <Input
+                  inputRef={(el) => {
+                    ref(el);
+                    photoInputRef.current = el;
+                  }}
+                  type='file'
+                  endAdornment={
+                    imagePreview && (
+                      <IconButton onClick={handleClearPhoto}>
+                        <DeleteIcon sx={{ color: 'error.main' }} />
+                      </IconButton>
+                    )
+                  }
+                  inputProps={{
+                    accept: 'image/jpeg,image/png,image/webp,image/gif',
+                  }}
+                  disableUnderline
+                  sx={{ fontSize: '0.875rem' }}
+                  fullWidth
+                  onChange={(e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    onChange(file ?? undefined);
+                  }}
+                />
+              )}
+            />
+            {errors.profileImage && (
+              <Alert severity='error'>{errors.profileImage.message}</Alert>
+            )}
+          </Box>
+        </Stack>
 
         {errorMessage && (
           <Alert severity='error'>

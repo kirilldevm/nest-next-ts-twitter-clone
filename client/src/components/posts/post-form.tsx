@@ -163,7 +163,7 @@ export default function PostForm({ postId }: PostFormProps) {
                   width: '100%',
                   height: 'auto',
                   maxHeight: 450,
-                  objectFit: 'cover',
+                  objectFit: 'contain',
                   mb: 1,
                   borderRadius: 1,
                 }}
