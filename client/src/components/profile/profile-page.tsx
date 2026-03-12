@@ -1,9 +1,11 @@
 'use client';
 
 import Link from '@/components/link';
+import PostCard from '@/components/posts/post-card';
+import { PostCardSkeleton } from '@/components/posts/post-card-skeleton';
 import { PAGES } from '@/config/pages.config';
 import { useAuth } from '@/context/auth.context';
-import { getDisplayName } from '@/helpers/get-display-name';
+import { getDisplayName } from '@/helpers';
 import { usePosts } from '@/hooks/posts.hook';
 import { useUser } from '@/hooks/user.hook';
 import Avatar from '@mui/material/Avatar';
@@ -12,7 +14,6 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import PostCard, { PostCardSkeleton } from '@/components/posts/post-card';
 
 type ProfilePageProps = {
   userId?: string;
@@ -134,8 +135,6 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
             justifyContent: 'center',
             gap: 0.5,
             color: 'text.secondary',
-            borderTop: 1,
-            borderColor: 'divider',
             py: 1,
           }}
         >
@@ -143,32 +142,25 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
         </Typography>
 
         {isLoadingPosts ? (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 1,
-              mt: 1,
-            }}
-          >
-            {Array.from({ length: 6 }).map((_, i) => (
+          <Box sx={{ mt: 1 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
               <PostCardSkeleton key={i} />
             ))}
           </Box>
         ) : (
           <>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 1,
-                mt: 1,
-              }}
-            >
+            <Box sx={{ mt: 1 }}>
               {postsData?.pages
                 .flatMap((p) => p.items)
                 .map((post) => (
-                  <PostCard key={post.id} post={post} canEdit={isOwnProfile} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    author={{
+                      displayName: getDisplayName(user),
+                      photoURL: user.photoURL,
+                    }}
+                  />
                 )) ?? null}
             </Box>
 

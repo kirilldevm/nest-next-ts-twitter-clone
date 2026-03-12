@@ -1,101 +1,182 @@
 'use client';
 
-import Link from '@/components/link';
 import { PAGES } from '@/config/pages.config';
+import { formatRelativeTime } from '@/helpers';
 import type { Post } from '@/types';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import RepeatIcon from '@mui/icons-material/Repeat';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
 import CardMedia from '@mui/material/CardMedia';
-import Skeleton from '@mui/material/Skeleton';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import Link from 'next/link';
+
+export type PostCardAuthor = {
+  displayName: string;
+  photoURL?: string | null;
+};
 
 type PostCardProps = {
   post: Post;
-  canEdit?: boolean;
+  author?: PostCardAuthor;
+  variant?: 'compact' | 'full'; // compact for profile grid, full for feed
 };
 
-function formatDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+export default function PostCard({
+  post,
+  author,
+  variant = 'full',
+}: PostCardProps) {
+  const displayName = author?.displayName ?? 'Unknown';
+  const authorId = post.authorId;
+  const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
 
-export default function PostCard({ post, canEdit = false }: PostCardProps) {
   const content = (
-    <>
-      {post.photoURL && (
-        <CardMedia
-          component='img'
-          image={post.photoURL}
-          alt={post.title}
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 2,
+        py: 2,
+        px: { xs: 2, sm: 0 },
+        '&:not(:last-child)': { borderBottom: 1, borderColor: 'divider' },
+      }}
+    >
+      <Avatar
+        src={author?.photoURL ?? undefined}
+        alt={displayName}
+        sx={{ width: 40, height: 40, flexShrink: 0 }}
+      >
+        {avatarLetter}
+      </Avatar>
+
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box
           sx={{
-            aspectRatio: '1',
-            objectFit: 'cover',
-          }}
-        />
-      )}
-      <Box sx={{ p: 1.5 }}>
-        <Typography
-          variant='subtitle2'
-          fontWeight={600}
-          noWrap
-          sx={{ mb: 0.5 }}
-        >
-          {post.title}
-        </Typography>
-        <Typography
-          variant='body2'
-          color='text.secondary'
-          sx={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mb: 0.5,
           }}
         >
-          {post.text}
-        </Typography>
-        <Typography
-          variant='caption'
-          color='text.secondary'
-          sx={{ mt: 1, display: 'block' }}
+          <Box component={Link} href={PAGES.PROFILE_BY_ID(authorId)}>
+            <Typography variant='subtitle2' fontWeight={600}>
+              {displayName}
+            </Typography>
+          </Box>
+          <Typography variant='caption' color='text.secondary'>
+            · {formatRelativeTime(post.createdAt)}
+          </Typography>
+        </Box>
+
+        <Box
+          component={'div'}
+          sx={{
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
         >
-          {formatDate(post.createdAt)}
-        </Typography>
+          {post.title && (
+            <Typography
+              variant='body1'
+              fontWeight={600}
+              sx={{
+                mb: post.text ? 0.5 : 0,
+                ...(variant === 'compact' && {
+                  display: '-webkit-box',
+                  WebkitLineClamp: 1,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }),
+              }}
+            >
+              {post.title}
+            </Typography>
+          )}
+          <Typography
+            variant='body2'
+            color='text.secondary'
+            sx={{
+              display: '-webkit-box',
+              WebkitLineClamp: variant === 'compact' ? 2 : 4,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {post.text}
+          </Typography>
+        </Box>
+
+        {post.photoURL && (
+          <Box
+            sx={{
+              mt: 1.5,
+              borderRadius: 2,
+              overflow: 'hidden',
+              maxWidth: 360,
+            }}
+          >
+            <CardMedia
+              component='img'
+              image={post.photoURL}
+              alt={post.title}
+              sx={{
+                borderRadius: 2,
+                maxHeight: variant === 'compact' ? 200 : 400,
+                objectFit: 'cover',
+              }}
+            />
+          </Box>
+        )}
+
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            mt: 1.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <IconButton
+              size='small'
+              sx={{ color: 'text.secondary', p: 0.5 }}
+              disabled
+            >
+              <FavoriteBorderIcon fontSize='small' />
+            </IconButton>
+            {(post.likesCount ?? 0) > 0 && (
+              <Typography variant='caption' color='text.secondary'>
+                {post.likesCount}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <IconButton
+              size='small'
+              sx={{ color: 'text.secondary', p: 0.5 }}
+              disabled
+            >
+              <ChatBubbleOutlineIcon fontSize='small' />
+            </IconButton>
+            {(post.commentsCount ?? 0) > 0 && (
+              <Typography variant='caption' color='text.secondary'>
+                {post.commentsCount}
+              </Typography>
+            )}
+          </Box>
+          <IconButton
+            size='small'
+            sx={{ color: 'text.secondary', p: 0.5 }}
+            disabled
+          >
+            <RepeatIcon fontSize='small' />
+          </IconButton>
+        </Box>
       </Box>
-    </>
+    </Box>
   );
 
-  return (
-    <Card sx={{ overflow: 'hidden' }}>
-      {canEdit ? (
-        <Link
-          href={PAGES.POST_EDIT(post.id)}
-          style={{ textDecoration: 'none', color: 'inherit' }}
-        >
-          <CardActionArea>{content}</CardActionArea>
-        </Link>
-      ) : (
-        <Box>{content}</Box>
-      )}
-    </Card>
-  );
-}
-
-export function PostCardSkeleton() {
-  return (
-    <Card sx={{ overflow: 'hidden' }}>
-      <Skeleton variant='rectangular' sx={{ aspectRatio: '1' }} />
-      <Box sx={{ p: 1.5 }}>
-        <Skeleton variant='text' width='80%' height={24} />
-        <Skeleton variant='text' width='100%' />
-        <Skeleton variant='text' width='60%' />
-        <Skeleton variant='text' width={80} height={20} sx={{ mt: 1 }} />
-      </Box>
-    </Card>
-  );
+  return content;
 }
