@@ -31,6 +31,7 @@ export const apiAuthPrefix = '/api/auth';
  * @type {string[]}
  */
 export const protectedRoutes = [
+  PAGES.FEED,
   PAGES.SETTINGS,
   PAGES.PROFILE,
   PAGES.POST_CREATE,
@@ -40,7 +41,7 @@ export const protectedRoutes = [
  * The default route to redirect logged in users to
  * @type {string}
  */
-export const DEFAULT_LOGIN_REDIRECT = PAGES.HOME;
+export const DEFAULT_LOGIN_REDIRECT = PAGES.FEED;
 
 /**
  * Route to redirect unauthenticated users to

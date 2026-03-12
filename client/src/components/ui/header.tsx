@@ -26,6 +26,12 @@ export default function Header() {
 
   const settings = [
     {
+      label: 'Feed',
+      onClick: () => {
+        router.push(PAGES.FEED);
+      },
+    },
+    {
       label: 'Profile',
       onClick: () => {
         router.push(PAGES.PROFILE);
@@ -83,7 +89,7 @@ export default function Header() {
               <Typography
                 variant='h6'
                 noWrap
-                onClick={() => router.push('/')}
+                onClick={() => router.push(user ? PAGES.FEED : '/')}
                 component='a'
                 sx={{
                   display: { xs: 'none', md: 'flex' },
@@ -118,7 +124,7 @@ export default function Header() {
               <Typography
                 variant='h5'
                 noWrap
-                onClick={() => router.push('/')}
+                onClick={() => router.push(user ? PAGES.FEED : '/')}
                 component='a'
                 sx={{
                   display: { xs: 'flex', md: 'none' },

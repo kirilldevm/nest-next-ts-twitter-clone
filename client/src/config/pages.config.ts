@@ -1,5 +1,6 @@
 export const PAGES = {
   HOME: '/',
+  FEED: '/feed',
 
   //Auth
   LOGIN: '/signin',
