@@ -15,5 +15,6 @@ export const PAGES = {
   PROFILE: '/profile',
   PROFILE_BY_ID: (id: string) => `/profile/${id}`,
   POST_CREATE: '/posts/create',
+  POST_PAGE: (id: string) => `/posts/${id}`,
   POST_EDIT: (id: string) => `/posts/${id}/edit`,
 } as const;

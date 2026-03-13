@@ -1,9 +1,9 @@
-import { QUERY_KEYS } from '@/config/query-keys.config';
-import { useRouter } from 'next/navigation';
-import { postService } from '@/services/post.service';
-import { PostFormData } from '@/schemas/post.schema';
 import { PAGES } from '@/config/pages.config';
+import { QUERY_KEYS } from '@/config/query-keys.config';
+import { PostFormData } from '@/schemas/post.schema';
+import { postService } from '@/services/post.service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export function usePost(postId: string | undefined) {
@@ -26,7 +26,9 @@ export function useCreatePostMutation() {
       router.push(PAGES.PROFILE);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to create post');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create post',
+      );
     },
   });
 }
@@ -50,7 +52,22 @@ export function useUpdatePostMutation(postId: string) {
       router.push(PAGES.PROFILE);
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to update post');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update post',
+      );
+    },
+  });
+}
+
+export function useDeletePostMutation() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (postId: string) => postService.deletePost(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POST.LIST });
+      toast.success('Post deleted');
     },
   });
 }

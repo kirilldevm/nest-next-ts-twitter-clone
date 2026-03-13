@@ -1,13 +1,13 @@
 import { ENDPOINTS } from '@/config/endpoints.config';
 import api from '@/lib/api';
 import { PostFormData } from '@/schemas/post.schema';
-import type { Post } from '@/types';
-import { isAxiosError } from 'axios';
 import {
   deleteOldProfileImage,
   deleteProfileImage,
   uploadPostImage,
 } from '@/services/storage.service';
+import type { Post } from '@/types';
+import { isAxiosError } from 'axios';
 
 export class PostService {
   async createPost(data: PostFormData): Promise<Post> {
@@ -93,6 +93,17 @@ export class PostService {
           // Very bad situation
         }
       }
+      if (isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(String(error.response.data.message));
+      }
+      throw error;
+    }
+  }
+
+  async deletePost(id: string): Promise<void> {
+    try {
+      await api.delete(ENDPOINTS.POST.BY_ID(id));
+    } catch (error) {
       if (isAxiosError(error) && error.response?.data?.message) {
         throw new Error(String(error.response.data.message));
       }

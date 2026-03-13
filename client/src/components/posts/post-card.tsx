@@ -8,7 +8,6 @@ import { ReactionTargetType, ReactionType } from '@/types/reaction.type';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import RepeatIcon from '@mui/icons-material/Repeat';
 import ThumbDownIcon from '@mui/icons-material/ThumbDown';
 import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import Avatar from '@mui/material/Avatar';
@@ -27,7 +26,7 @@ export type PostCardAuthor = {
 type PostCardProps = {
   post: Post;
   author: PostCardAuthor;
-  variant?: 'compact' | 'full';
+  variant?: 'compact' | 'full' | 'detail';
   showReactions?: boolean;
 };
 
@@ -43,11 +42,11 @@ export default function PostCard({
   const authorId = post.authorId;
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
 
-  const accomulateReactions = useMemo(() => {
+  const accumulateReactions = useMemo(() => {
     return (post.likesCount ?? 0) - (post.dislikesCount ?? 0);
   }, [post.likesCount, post.dislikesCount]);
 
-  const content = (
+  return (
     <Box
       sx={{
         display: 'flex',
@@ -85,7 +84,8 @@ export default function PostCard({
         </Box>
 
         <Box
-          component={'div'}
+          component={variant !== 'detail' ? Link : 'div'}
+          href={variant !== 'detail' ? PAGES.POST_PAGE(post.id) : undefined}
           sx={{
             textDecoration: 'none',
             color: 'inherit',
@@ -112,10 +112,12 @@ export default function PostCard({
             variant='body2'
             color='text.secondary'
             sx={{
-              display: '-webkit-box',
-              WebkitLineClamp: variant === 'compact' ? 2 : 4,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
+              ...(variant !== 'detail' && {
+                display: '-webkit-box',
+                WebkitLineClamp: variant === 'compact' ? 2 : 4,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }),
             }}
           >
             {post.text}
@@ -137,7 +139,12 @@ export default function PostCard({
               alt={post.title}
               sx={{
                 borderRadius: 2,
-                maxHeight: variant === 'compact' ? 200 : 400,
+                maxHeight:
+                  variant === 'compact'
+                    ? 200
+                    : variant === 'detail'
+                      ? 500
+                      : 400,
                 objectFit: 'cover',
               }}
             />
@@ -180,9 +187,9 @@ export default function PostCard({
               </IconButton>
             </Box>
 
-            {accomulateReactions > 0 && (
+            {accumulateReactions ?? (
               <Typography variant='caption' color={'text.secondary'}>
-                {accomulateReactions}
+                {accumulateReactions}
               </Typography>
             )}
 
@@ -227,18 +234,9 @@ export default function PostCard({
                 </Typography>
               )}
             </Box>
-            <IconButton
-              size='small'
-              sx={{ color: 'text.secondary', p: 0.5 }}
-              disabled
-            >
-              <RepeatIcon fontSize='small' />
-            </IconButton>
           </Box>
         )}
       </Box>
     </Box>
   );
-
-  return content;
 }
