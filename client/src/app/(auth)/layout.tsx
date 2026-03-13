@@ -1,16 +1,19 @@
 'use client';
 
-import { DEFAULT_LOGIN_REDIRECT } from '@/config/routes.config';
+import { DEFAULT_LOGIN_REDIRECT, publicRoutes } from '@/config/routes.config';
 import { useAuth } from '@/context/auth.context';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  console.log(publicRoutes.includes(pathname as (typeof publicRoutes)[number]));
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true));
@@ -20,10 +23,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!mounted || loading) return;
 
-    if (user) {
+    if (
+      user &&
+      !publicRoutes.includes(pathname as (typeof publicRoutes)[number])
+    ) {
       router.replace(DEFAULT_LOGIN_REDIRECT);
     }
-  }, [mounted, user, loading, router]);
+  }, [mounted, user, loading, router, pathname]);
 
   // Avoid hydration mismatch: auth state differs on server vs client (Firebase resolves from cache)
   if (!mounted) {
@@ -56,7 +62,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  if (user) {
+  if (
+    user &&
+    !publicRoutes.includes(pathname as (typeof publicRoutes)[number])
+  ) {
     return null; // Redirecting
   }
 

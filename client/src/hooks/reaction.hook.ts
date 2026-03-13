@@ -8,6 +8,7 @@ export function useReaction(targetType: ReactionTargetType, targetId: string) {
     queryKey: QUERY_KEYS.REACTION.BY_TARGET(targetType, targetId),
     queryFn: () => reactionService.getReaction(targetType, targetId),
     enabled: !!targetId,
+    staleTime: 0,
   });
 }
 

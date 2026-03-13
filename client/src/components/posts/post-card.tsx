@@ -17,6 +17,7 @@ import CardMedia from '@mui/material/CardMedia';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
 export type PostCardAuthor = {
   displayName: string;
@@ -37,10 +38,14 @@ export default function PostCard({
   showReactions = true,
 }: PostCardProps) {
   const { data: userReaction } = useReaction(ReactionTargetType.POST, post.id);
-  const setReactionMutation = useSetReactionMutation();
+  const { mutate: setReaction, isPending } = useSetReactionMutation();
   const displayName = author.displayName;
   const authorId = post.authorId;
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
+
+  const accomulateReactions = useMemo(() => {
+    return (post.likesCount ?? 0) - (post.dislikesCount ?? 0);
+  }, [post.likesCount, post.dislikesCount]);
 
   const content = (
     <Box
@@ -159,13 +164,13 @@ export default function PostCard({
                   p: 0.5,
                 }}
                 onClick={() =>
-                  setReactionMutation.mutate({
+                  setReaction({
                     targetId: post.id,
                     targetType: ReactionTargetType.POST,
                     type: ReactionType.LIKE,
                   })
                 }
-                disabled={setReactionMutation.isPending}
+                disabled={isPending}
               >
                 {userReaction === ReactionType.LIKE ? (
                   <FavoriteIcon fontSize='small' />
@@ -173,57 +178,41 @@ export default function PostCard({
                   <FavoriteBorderIcon fontSize='small' />
                 )}
               </IconButton>
-              {(post.likesCount ?? 0) > 0 && (
-                <Typography
-                  variant='caption'
-                  color={
-                    userReaction === ReactionType.LIKE
-                      ? 'error.main'
-                      : 'text.secondary'
-                  }
-                >
-                  {post.likesCount}
-                </Typography>
-              )}
             </Box>
+
+            {accomulateReactions > 0 && (
+              <Typography variant='caption' color={'text.secondary'}>
+                {accomulateReactions}
+              </Typography>
+            )}
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <IconButton
                 size='small'
                 sx={{
                   color:
-                    userReaction === 'dislike'
+                    userReaction === ReactionType.DISLIKE
                       ? 'primary.main'
                       : 'text.secondary',
                   p: 0.5,
                 }}
                 onClick={() =>
-                  setReactionMutation.mutate({
+                  setReaction({
                     targetId: post.id,
                     targetType: ReactionTargetType.POST,
                     type: ReactionType.DISLIKE,
                   })
                 }
-                disabled={setReactionMutation.isPending}
+                disabled={isPending}
               >
-                {userReaction === 'dislike' ? (
+                {userReaction === ReactionType.DISLIKE ? (
                   <ThumbDownIcon fontSize='small' />
                 ) : (
                   <ThumbDownOffAltIcon fontSize='small' />
                 )}
               </IconButton>
-              {(post.dislikesCount ?? 0) > 0 && (
-                <Typography
-                  variant='caption'
-                  color={
-                    userReaction === 'dislike'
-                      ? 'primary.main'
-                      : 'text.secondary'
-                  }
-                >
-                  {post.dislikesCount}
-                </Typography>
-              )}
             </Box>
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <IconButton
                 size='small'

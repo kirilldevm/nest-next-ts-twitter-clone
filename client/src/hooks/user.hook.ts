@@ -7,5 +7,6 @@ export function useUser(userId: string | undefined) {
     queryKey: QUERY_KEYS.USER.BY_ID(userId ?? ''),
     queryFn: () => userService.getUser(userId!),
     enabled: !!userId,
+    staleTime: 0,
   });
 }
