@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReactionModule = void 0;
 const common_1 = require("@nestjs/common");
+const comment_module_1 = require("../comment/comment.module");
 const post_module_1 = require("../post/post.module");
 const reaction_controller_1 = require("./reaction.controller");
 const reaction_repository_1 = require("./repository/reaction.repository");
@@ -17,7 +18,7 @@ let ReactionModule = class ReactionModule {
 exports.ReactionModule = ReactionModule;
 exports.ReactionModule = ReactionModule = __decorate([
     (0, common_1.Module)({
-        imports: [post_module_1.PostModule],
+        imports: [post_module_1.PostModule, comment_module_1.CommentModule],
         controllers: [reaction_controller_1.ReactionController],
         providers: [reaction_service_1.ReactionService, reaction_repository_1.ReactionRepository],
         exports: [reaction_service_1.ReactionService],

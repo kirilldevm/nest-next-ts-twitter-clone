@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostModule = void 0;
 const common_1 = require("@nestjs/common");
+const storage_service_1 = require("../storage/storage.service");
 const post_controller_1 = require("./post.controller");
 const post_repository_1 = require("./repository/post.repository");
 const post_service_1 = require("./post.service");
@@ -17,7 +18,7 @@ exports.PostModule = PostModule;
 exports.PostModule = PostModule = __decorate([
     (0, common_1.Module)({
         controllers: [post_controller_1.PostController],
-        providers: [post_service_1.PostService, post_repository_1.PostRepository],
+        providers: [post_service_1.PostService, post_repository_1.PostRepository, storage_service_1.StorageService],
         exports: [post_service_1.PostService, post_repository_1.PostRepository],
     })
 ], PostModule);

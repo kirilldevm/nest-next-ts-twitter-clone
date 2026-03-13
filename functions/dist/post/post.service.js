@@ -11,11 +11,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostService = void 0;
 const common_1 = require("@nestjs/common");
+const storage_service_1 = require("../storage/storage.service");
 const post_repository_1 = require("./repository/post.repository");
 let PostService = class PostService {
     postRepository;
-    constructor(postRepository) {
+    storageService;
+    constructor(postRepository, storageService) {
         this.postRepository = postRepository;
+        this.storageService = storageService;
     }
     async createPost(authorId, dto) {
         return this.postRepository.createPost({
@@ -65,12 +68,16 @@ let PostService = class PostService {
         if (post.authorId !== userId) {
             throw new common_1.ForbiddenException('You can only delete your own posts');
         }
+        if (post.photoURL) {
+            await this.storageService.deleteFileByUrl(post.photoURL);
+        }
         await this.postRepository.deletePost(postId);
     }
 };
 exports.PostService = PostService;
 exports.PostService = PostService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [post_repository_1.PostRepository])
+    __metadata("design:paramtypes", [post_repository_1.PostRepository,
+        storage_service_1.StorageService])
 ], PostService);
 //# sourceMappingURL=post.service.js.map

@@ -61,7 +61,6 @@ export function useUpdatePostMutation(postId: string) {
 
 export function useDeletePostMutation() {
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   return useMutation({
     mutationFn: (postId: string) => postService.deletePost(postId),

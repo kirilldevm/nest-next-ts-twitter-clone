@@ -45,67 +45,85 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReactionService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
+const comment_entity_1 = require("../comment/entity/comment.entity");
+const post_entity_1 = require("../post/entity/post.entity");
+const comment_repository_1 = require("../comment/repository/comment.repository");
 const post_repository_1 = require("../post/repository/post.repository");
 const reaction_entity_1 = require("./entity/reaction.entity");
 const reaction_repository_1 = require("./repository/reaction.repository");
 let ReactionService = class ReactionService {
     reactionRepository;
     postRepository;
-    constructor(reactionRepository, postRepository) {
+    commentRepository;
+    constructor(reactionRepository, postRepository, commentRepository) {
         this.reactionRepository = reactionRepository;
         this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
     }
     async setReaction(userId, targetType, targetId, type) {
-        if (targetType === reaction_entity_1.ReactionTargetType.POST) {
-            return admin.firestore().runTransaction(async (transaction) => {
+        return admin.firestore().runTransaction(async (transaction) => {
+            let entity = null;
+            if (targetType === reaction_entity_1.ReactionTargetType.POST) {
                 const post = await this.postRepository.getPost(targetId, transaction);
                 if (!post) {
                     throw new common_1.NotFoundException('Post not found');
                 }
-                const existing = await this.reactionRepository.getReaction(reaction_entity_1.ReactionTargetType.POST, targetId, userId, transaction);
-                let likesDelta = 0;
-                let dislikesDelta = 0;
-                let newReactionType = type;
-                if (existing?.type === type) {
-                    if (type === reaction_entity_1.ReactionType.LIKE)
-                        likesDelta = -1;
-                    else
-                        dislikesDelta = -1;
-                    newReactionType = null;
+                entity = post;
+            }
+            else if (targetType === reaction_entity_1.ReactionTargetType.COMMENT) {
+                const comment = await this.commentRepository.getComment(targetId, transaction);
+                if (!comment) {
+                    throw new common_1.NotFoundException('Comment not found');
                 }
-                else if (existing?.type) {
-                    if (existing.type === reaction_entity_1.ReactionType.LIKE)
-                        likesDelta = -1;
-                    else
-                        dislikesDelta = -1;
-                    if (type === reaction_entity_1.ReactionType.LIKE)
-                        likesDelta += 1;
-                    else
-                        dislikesDelta += 1;
-                }
-                else {
-                    if (type === reaction_entity_1.ReactionType.LIKE)
-                        likesDelta = 1;
-                    else
-                        dislikesDelta = 1;
-                }
-                const newLikesCount = Math.max(0, (post.likesCount ?? 0) + likesDelta);
-                const newDislikesCount = Math.max(0, (post.dislikesCount ?? 0) + dislikesDelta);
-                if (newReactionType) {
-                    await this.reactionRepository.setReaction(reaction_entity_1.ReactionTargetType.POST, targetId, userId, type, transaction);
-                }
-                else {
-                    await this.reactionRepository.deleteReaction(reaction_entity_1.ReactionTargetType.POST, targetId, userId, transaction);
-                }
+                entity = comment;
+            }
+            const existing = await this.reactionRepository.getReaction(targetType, targetId, userId, transaction);
+            let likesDelta = 0;
+            let dislikesDelta = 0;
+            let newReactionType = type;
+            if (existing?.type === type) {
+                if (type === reaction_entity_1.ReactionType.LIKE)
+                    likesDelta = -1;
+                else
+                    dislikesDelta = -1;
+                newReactionType = null;
+            }
+            else if (existing?.type) {
+                if (existing.type === reaction_entity_1.ReactionType.LIKE)
+                    likesDelta = -1;
+                else
+                    dislikesDelta = -1;
+                if (type === reaction_entity_1.ReactionType.LIKE)
+                    likesDelta += 1;
+                else
+                    dislikesDelta += 1;
+            }
+            else {
+                if (type === reaction_entity_1.ReactionType.LIKE)
+                    likesDelta = 1;
+                else
+                    dislikesDelta = 1;
+            }
+            const newLikesCount = Math.max(0, (entity?.likesCount ?? 0) + likesDelta);
+            const newDislikesCount = Math.max(0, (entity?.dislikesCount ?? 0) + dislikesDelta);
+            if (newReactionType) {
+                await this.reactionRepository.setReaction(targetType, targetId, userId, type, transaction);
+            }
+            else {
+                await this.reactionRepository.deleteReaction(targetType, targetId, userId, transaction);
+            }
+            if (entity instanceof post_entity_1.Post) {
                 await this.postRepository.updatePost(targetId, { likesCount: newLikesCount, dislikesCount: newDislikesCount }, transaction);
-                return {
-                    type: newReactionType,
-                    likesCount: newLikesCount,
-                    dislikesCount: newDislikesCount,
-                };
-            });
-        }
-        throw new common_1.BadRequestException('Unsupported target type');
+            }
+            else if (entity instanceof comment_entity_1.Comment) {
+                await this.commentRepository.updateComment(targetId, { likesCount: newLikesCount, dislikesCount: newDislikesCount }, transaction);
+            }
+            return {
+                type: newReactionType,
+                likesCount: newLikesCount,
+                dislikesCount: newDislikesCount,
+            };
+        });
     }
     async getReaction(userId, targetType, targetId) {
         const reaction = await this.reactionRepository.getReaction(targetType, targetId, userId);
@@ -116,6 +134,7 @@ exports.ReactionService = ReactionService;
 exports.ReactionService = ReactionService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [reaction_repository_1.ReactionRepository,
-        post_repository_1.PostRepository])
+        post_repository_1.PostRepository,
+        comment_repository_1.CommentRepository])
 ], ReactionService);
 //# sourceMappingURL=reaction.service.js.map
