@@ -13,4 +13,8 @@ export const ENDPOINTS = {
     LIST: '/post',
     BY_ID: (id: string) => `/post/${id}`,
   },
+  REACTION: {
+    SET: '/reaction',
+    GET: '/reaction',
+  },
 };

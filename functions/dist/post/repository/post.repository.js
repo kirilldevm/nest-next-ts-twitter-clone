@@ -68,8 +68,11 @@ let PostRepository = class PostRepository {
             commentsCount: data.commentsCount ?? 0,
         };
     }
-    async getPost(id) {
-        const doc = await this.postsDb.doc(id).get();
+    async getPost(id, transaction) {
+        const docRef = this.postsDb.doc(id);
+        const doc = transaction
+            ? await transaction.get(docRef)
+            : await docRef.get();
         return this.mapDoc(doc);
     }
     async createPost(data) {
@@ -84,15 +87,22 @@ let PostRepository = class PostRepository {
             throw new common_1.BadRequestException('Failed to create post');
         return created;
     }
-    async updatePost(id, data) {
+    async updatePost(id, data, transaction) {
         const docRef = this.postsDb.doc(id);
-        const doc = await docRef.get();
-        if (!doc.exists)
-            return null;
         const { id: _id, authorId: _authorId, createdAt: _createdAt, ...update } = data;
         if (Object.keys(update).length > 0) {
-            await docRef.update(update);
+            if (transaction) {
+                transaction.update(docRef, update);
+            }
+            else {
+                const doc = await docRef.get();
+                if (!doc.exists)
+                    return null;
+                await docRef.update(update);
+            }
         }
+        if (transaction)
+            return null;
         return this.getPost(id);
     }
     async deletePost(id) {

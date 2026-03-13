@@ -2,10 +2,15 @@
 
 import { PAGES } from '@/config/pages.config';
 import { formatRelativeTime } from '@/helpers';
+import { useReaction, useSetReactionMutation } from '@/hooks/reaction.hook';
 import type { Post } from '@/types';
+import { ReactionTargetType, ReactionType } from '@/types/reaction.type';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import RepeatIcon from '@mui/icons-material/Repeat';
+import ThumbDownIcon from '@mui/icons-material/ThumbDown';
+import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import CardMedia from '@mui/material/CardMedia';
@@ -20,16 +25,20 @@ export type PostCardAuthor = {
 
 type PostCardProps = {
   post: Post;
-  author?: PostCardAuthor;
-  variant?: 'compact' | 'full'; // compact for profile grid, full for feed
+  author: PostCardAuthor;
+  variant?: 'compact' | 'full';
+  showReactions?: boolean;
 };
 
 export default function PostCard({
   post,
   author,
   variant = 'full',
+  showReactions = true,
 }: PostCardProps) {
-  const displayName = author?.displayName ?? 'Unknown';
+  const { data: userReaction } = useReaction(ReactionTargetType.POST, post.id);
+  const setReactionMutation = useSetReactionMutation();
+  const displayName = author.displayName;
   const authorId = post.authorId;
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
 
@@ -130,50 +139,114 @@ export default function PostCard({
           </Box>
         )}
 
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            mt: 1.5,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton
-              size='small'
-              sx={{ color: 'text.secondary', p: 0.5 }}
-              disabled
-            >
-              <FavoriteBorderIcon fontSize='small' />
-            </IconButton>
-            {(post.likesCount ?? 0) > 0 && (
-              <Typography variant='caption' color='text.secondary'>
-                {post.likesCount}
-              </Typography>
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <IconButton
-              size='small'
-              sx={{ color: 'text.secondary', p: 0.5 }}
-              disabled
-            >
-              <ChatBubbleOutlineIcon fontSize='small' />
-            </IconButton>
-            {(post.commentsCount ?? 0) > 0 && (
-              <Typography variant='caption' color='text.secondary'>
-                {post.commentsCount}
-              </Typography>
-            )}
-          </Box>
-          <IconButton
-            size='small'
-            sx={{ color: 'text.secondary', p: 0.5 }}
-            disabled
+        {showReactions && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              mt: 1.5,
+            }}
           >
-            <RepeatIcon fontSize='small' />
-          </IconButton>
-        </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                size='small'
+                sx={{
+                  color:
+                    userReaction === ReactionType.LIKE
+                      ? 'error.main'
+                      : 'text.secondary',
+                  p: 0.5,
+                }}
+                onClick={() =>
+                  setReactionMutation.mutate({
+                    targetId: post.id,
+                    targetType: ReactionTargetType.POST,
+                    type: ReactionType.LIKE,
+                  })
+                }
+                disabled={setReactionMutation.isPending}
+              >
+                {userReaction === ReactionType.LIKE ? (
+                  <FavoriteIcon fontSize='small' />
+                ) : (
+                  <FavoriteBorderIcon fontSize='small' />
+                )}
+              </IconButton>
+              {(post.likesCount ?? 0) > 0 && (
+                <Typography
+                  variant='caption'
+                  color={
+                    userReaction === ReactionType.LIKE
+                      ? 'error.main'
+                      : 'text.secondary'
+                  }
+                >
+                  {post.likesCount}
+                </Typography>
+              )}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                size='small'
+                sx={{
+                  color:
+                    userReaction === 'dislike'
+                      ? 'primary.main'
+                      : 'text.secondary',
+                  p: 0.5,
+                }}
+                onClick={() =>
+                  setReactionMutation.mutate({
+                    targetId: post.id,
+                    targetType: ReactionTargetType.POST,
+                    type: ReactionType.DISLIKE,
+                  })
+                }
+                disabled={setReactionMutation.isPending}
+              >
+                {userReaction === 'dislike' ? (
+                  <ThumbDownIcon fontSize='small' />
+                ) : (
+                  <ThumbDownOffAltIcon fontSize='small' />
+                )}
+              </IconButton>
+              {(post.dislikesCount ?? 0) > 0 && (
+                <Typography
+                  variant='caption'
+                  color={
+                    userReaction === 'dislike'
+                      ? 'primary.main'
+                      : 'text.secondary'
+                  }
+                >
+                  {post.dislikesCount}
+                </Typography>
+              )}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <IconButton
+                size='small'
+                sx={{ color: 'text.secondary', p: 0.5 }}
+                disabled
+              >
+                <ChatBubbleOutlineIcon fontSize='small' />
+              </IconButton>
+              {(post.commentsCount ?? 0) > 0 && (
+                <Typography variant='caption' color='text.secondary'>
+                  {post.commentsCount}
+                </Typography>
+              )}
+            </Box>
+            <IconButton
+              size='small'
+              sx={{ color: 'text.secondary', p: 0.5 }}
+              disabled
+            >
+              <RepeatIcon fontSize='small' />
+            </IconButton>
+          </Box>
+        )}
       </Box>
     </Box>
   );

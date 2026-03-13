@@ -32,12 +32,14 @@ export class AuthService {
       typeof profileImageUrl === 'string' && profileImageUrl.trim() !== ''
         ? profileImageUrl.trim()
         : null;
+
+    // If photoURL is provided, validate it
     if (trimmedPhoto) {
       try {
         new URL(trimmedPhoto);
         createUserOptions.photoURL = trimmedPhoto;
       } catch {
-        // Invalid URL, skip photoURL
+        // Skip photoURL
       }
     }
 
@@ -71,6 +73,7 @@ export class AuthService {
         emailVerified: false,
       });
       userData = user!;
+
       // Send verification email
       try {
         await this.emailService.sendVerificationLink(email);

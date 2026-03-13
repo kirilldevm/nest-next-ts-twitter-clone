@@ -53,6 +53,7 @@ export class UserRepository {
       const existingUser = await this.usersDb
         .where('email', '==', data.email)
         .get();
+
       if (existingUser.docs.length > 0 && existingUser.docs[0].id !== id) {
         throw new BadRequestException('Email is already in use');
       }
@@ -60,6 +61,7 @@ export class UserRepository {
     if (data.email && !doc.data()?.emailVerified) {
       throw new BadRequestException('Email is not verified');
     }
+
     await doc.ref.update(data);
   }
 }

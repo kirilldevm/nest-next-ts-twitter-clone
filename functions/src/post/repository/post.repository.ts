@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Post } from '../entity/post.entity';
+import { FirestoreTransaction } from 'src/types';
 
 const LIMIT_MAX = 50;
 const LIMIT_DEFAULT = 10;
@@ -32,8 +33,14 @@ export class PostRepository {
     };
   }
 
-  async getPost(id: string): Promise<Post | null> {
-    const doc = await this.postsDb.doc(id).get();
+  async getPost(
+    id: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<Post | null> {
+    const docRef = this.postsDb.doc(id);
+    const doc = transaction
+      ? await transaction.get(docRef)
+      : await docRef.get();
     return this.mapDoc(doc);
   }
 
@@ -53,11 +60,12 @@ export class PostRepository {
     return created;
   }
 
-  async updatePost(id: string, data: Partial<Post>): Promise<Post | null> {
+  async updatePost(
+    id: string,
+    data: Partial<Post>,
+    transaction?: FirestoreTransaction,
+  ): Promise<Post | null> {
     const docRef = this.postsDb.doc(id);
-    const doc = await docRef.get();
-
-    if (!doc.exists) return null;
 
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const {
@@ -68,8 +76,16 @@ export class PostRepository {
     } = data;
 
     if (Object.keys(update).length > 0) {
-      await docRef.update(update);
+      if (transaction) {
+        transaction.update(docRef, update);
+      } else {
+        const doc = await docRef.get();
+        if (!doc.exists) return null;
+        await docRef.update(update);
+      }
     }
+
+    if (transaction) return null;
 
     return this.getPost(id);
   }

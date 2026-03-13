@@ -18,7 +18,7 @@ exports.PostModule = PostModule = __decorate([
     (0, common_1.Module)({
         controllers: [post_controller_1.PostController],
         providers: [post_service_1.PostService, post_repository_1.PostRepository],
-        exports: [post_service_1.PostService],
+        exports: [post_service_1.PostService, post_repository_1.PostRepository],
     })
 ], PostModule);
 //# sourceMappingURL=post.module.js.map

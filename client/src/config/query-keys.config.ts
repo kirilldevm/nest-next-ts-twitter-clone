@@ -11,4 +11,8 @@ export const QUERY_KEYS = {
     LIST: (authorId?: string) =>
       authorId ? ['posts', 'list', authorId] : ['posts', 'list'],
   },
+  REACTION: {
+    BY_TARGET: (targetType: string, targetId: string) =>
+      ['reaction', targetType, targetId] as const,
+  },
 };

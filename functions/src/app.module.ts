@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { EmailModule } from './email/email.module';
 import { PostModule } from './post/post.module';
+import { ReactionModule } from './reaction/reaction.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PostModule } from './post/post.module';
     UserModule,
     EmailModule,
     PostModule,
+    ReactionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
