@@ -1,22 +1,17 @@
 'use client';
 
 import { PAGES } from '@/config/pages.config';
+import ReactionButtons from '@/components/reactions/reaction-buttons';
 import { formatRelativeTime } from '@/helpers';
-import { useReaction, useSetReactionMutation } from '@/hooks/reaction.hook';
 import type { Post } from '@/types';
-import { ReactionTargetType, ReactionType } from '@/types/reaction.type';
+import { ReactionTargetType } from '@/types/reaction.type';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import ThumbDownIcon from '@mui/icons-material/ThumbDown';
-import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import CardMedia from '@mui/material/CardMedia';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
-import { useMemo } from 'react';
 
 export type PostCardAuthor = {
   displayName: string;
@@ -36,15 +31,9 @@ export default function PostCard({
   variant = 'full',
   showReactions = true,
 }: PostCardProps) {
-  const { data: userReaction } = useReaction(ReactionTargetType.POST, post.id);
-  const { mutate: setReaction, isPending } = useSetReactionMutation();
   const displayName = author.displayName;
   const authorId = post.authorId;
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
-
-  const accumulateReactions = useMemo(() => {
-    return (post.likesCount ?? 0) - (post.dislikesCount ?? 0);
-  }, [post.likesCount, post.dislikesCount]);
 
   return (
     <Box
@@ -160,65 +149,12 @@ export default function PostCard({
               mt: 1.5,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton
-                size='small'
-                sx={{
-                  color:
-                    userReaction === ReactionType.LIKE
-                      ? 'error.main'
-                      : 'text.secondary',
-                  p: 0.5,
-                }}
-                onClick={() =>
-                  setReaction({
-                    targetId: post.id,
-                    targetType: ReactionTargetType.POST,
-                    type: ReactionType.LIKE,
-                  })
-                }
-                disabled={isPending}
-              >
-                {userReaction === ReactionType.LIKE ? (
-                  <FavoriteIcon fontSize='small' />
-                ) : (
-                  <FavoriteBorderIcon fontSize='small' />
-                )}
-              </IconButton>
-            </Box>
-
-            {accumulateReactions ?? (
-              <Typography variant='caption' color={'text.secondary'}>
-                {accumulateReactions}
-              </Typography>
-            )}
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton
-                size='small'
-                sx={{
-                  color:
-                    userReaction === ReactionType.DISLIKE
-                      ? 'primary.main'
-                      : 'text.secondary',
-                  p: 0.5,
-                }}
-                onClick={() =>
-                  setReaction({
-                    targetId: post.id,
-                    targetType: ReactionTargetType.POST,
-                    type: ReactionType.DISLIKE,
-                  })
-                }
-                disabled={isPending}
-              >
-                {userReaction === ReactionType.DISLIKE ? (
-                  <ThumbDownIcon fontSize='small' />
-                ) : (
-                  <ThumbDownOffAltIcon fontSize='small' />
-                )}
-              </IconButton>
-            </Box>
+            <ReactionButtons
+              targetType={ReactionTargetType.POST}
+              targetId={post.id}
+              likesCount={post.likesCount ?? 0}
+              dislikesCount={post.dislikesCount ?? 0}
+            />
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <IconButton

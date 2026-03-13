@@ -20,7 +20,7 @@ export function useCreatePostMutation() {
 
   return useMutation({
     mutationFn: (data: PostFormData) => postService.createPost(data),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POST.LIST });
       toast.success('Post created');
       router.push(PAGES.PROFILE);
