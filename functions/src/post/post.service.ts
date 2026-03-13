@@ -3,13 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { StorageService } from '../storage/storage.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostRepository } from './repository/post.repository';
 
 @Injectable()
 export class PostService {
-  constructor(private readonly postRepository: PostRepository) {}
+  constructor(
+    private readonly postRepository: PostRepository,
+    private readonly storageService: StorageService,
+  ) {}
 
   async createPost(authorId: string, dto: CreatePostDto) {
     return this.postRepository.createPost({
@@ -60,12 +64,19 @@ export class PostService {
 
   async deletePost(postId: string, userId: string) {
     const post = await this.postRepository.getPost(postId);
+
     if (!post) {
       throw new NotFoundException('Post not found');
     }
+
     if (post.authorId !== userId) {
       throw new ForbiddenException('You can only delete your own posts');
     }
+
+    if (post.photoURL) {
+      await this.storageService.deleteFileByUrl(post.photoURL);
+    }
+
     await this.postRepository.deletePost(postId);
   }
 }
