@@ -15,4 +15,11 @@ export const QUERY_KEYS = {
     BY_TARGET: (targetType: string, targetId: string) =>
       ['reaction', targetType, targetId] as const,
   },
+  COMMENT: {
+    LIST: (postId: string, parentId?: string | null) =>
+      parentId
+        ? (['comment', 'list', postId, parentId] as const)
+        : (['comment', 'list', postId] as const),
+    BY_ID: (id: string) => ['comment', id] as const,
+  },
 };

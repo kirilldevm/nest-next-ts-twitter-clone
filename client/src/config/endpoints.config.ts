@@ -17,4 +17,8 @@ export const ENDPOINTS = {
     SET: '/reaction',
     GET: '/reaction',
   },
+  COMMENT: {
+    LIST: '/comment',
+    BY_ID: (id: string) => `/comment/${id}`,
+  },
 };
