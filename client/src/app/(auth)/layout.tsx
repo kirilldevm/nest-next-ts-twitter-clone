@@ -13,8 +13,6 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  console.log(publicRoutes.includes(pathname as (typeof publicRoutes)[number]));
-
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(id);

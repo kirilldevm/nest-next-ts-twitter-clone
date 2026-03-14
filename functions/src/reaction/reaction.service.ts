@@ -94,13 +94,13 @@ export class ReactionService {
         );
       }
 
-      if (entity instanceof Post) {
+      if (targetType === ReactionTargetType.POST) {
         await this.postRepository.updatePost(
           targetId,
           { likesCount: newLikesCount, dislikesCount: newDislikesCount },
           transaction,
         );
-      } else if (entity instanceof Comment) {
+      } else if (targetType === ReactionTargetType.COMMENT) {
         await this.commentRepository.updateComment(
           targetId,
           { likesCount: newLikesCount, dislikesCount: newDislikesCount },

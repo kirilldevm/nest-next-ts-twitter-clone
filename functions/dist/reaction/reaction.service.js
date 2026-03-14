@@ -45,8 +45,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReactionService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
-const comment_entity_1 = require("../comment/entity/comment.entity");
-const post_entity_1 = require("../post/entity/post.entity");
 const comment_repository_1 = require("../comment/repository/comment.repository");
 const post_repository_1 = require("../post/repository/post.repository");
 const reaction_entity_1 = require("./entity/reaction.entity");
@@ -112,10 +110,10 @@ let ReactionService = class ReactionService {
             else {
                 await this.reactionRepository.deleteReaction(targetType, targetId, userId, transaction);
             }
-            if (entity instanceof post_entity_1.Post) {
+            if (targetType === reaction_entity_1.ReactionTargetType.POST) {
                 await this.postRepository.updatePost(targetId, { likesCount: newLikesCount, dislikesCount: newDislikesCount }, transaction);
             }
-            else if (entity instanceof comment_entity_1.Comment) {
+            else if (targetType === reaction_entity_1.ReactionTargetType.COMMENT) {
                 await this.commentRepository.updateComment(targetId, { likesCount: newLikesCount, dislikesCount: newDislikesCount }, transaction);
             }
             return {

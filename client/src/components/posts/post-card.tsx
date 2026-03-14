@@ -64,17 +64,12 @@ export default function PostCard({
             mb: 0.5,
           }}
         >
-          {authorId ? (
-            <Box component={Link} href={PAGES.PROFILE_BY_ID(authorId)}>
-              <Typography variant='subtitle2' fontWeight={600}>
-                {displayName}
-              </Typography>
-            </Box>
-          ) : (
+          <Box component={Link} href={PAGES.PROFILE_BY_ID(authorId)}>
             <Typography variant='subtitle2' fontWeight={600}>
               {displayName}
             </Typography>
-          )}
+          </Box>
+
           <Typography variant='caption' color='text.secondary'>
             · {formatRelativeTime(post.createdAt)}
           </Typography>

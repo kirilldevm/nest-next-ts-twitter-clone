@@ -47,6 +47,37 @@ function updateCommentInInfiniteCache(
   );
 }
 
+type ListPostsResponse = { items: Post[]; nextCursor: string | null };
+type SearchPostsResponse = {
+  items: (Post & { author?: { displayName: string; photoURL: string | null } })[];
+  nextPage: number | null;
+  totalHits?: number;
+};
+
+function updatePostInListCaches(
+  queryClient: ReturnType<typeof import('@tanstack/react-query').useQueryClient>,
+  postId: string,
+  updates: { likesCount: number; dislikesCount: number },
+) {
+  queryClient.setQueriesData(
+    {
+      predicate: (q) =>
+        Array.isArray(q.queryKey) && q.queryKey[0] === 'posts',
+    },
+    (old: ListPostsResponse | SearchPostsResponse | undefined) => {
+      if (!old || !('items' in old) || !Array.isArray(old.items)) return old;
+      return {
+        ...old,
+        items: old.items.map((p) =>
+          p.id === postId
+            ? { ...p, likesCount: updates.likesCount, dislikesCount: updates.dislikesCount }
+            : p,
+        ),
+      };
+    },
+  );
+}
+
 export function useSetReactionMutation() {
   const queryClient = useQueryClient();
 
@@ -70,8 +101,9 @@ export function useSetReactionMutation() {
                 }
               : old,
         );
-        queryClient.invalidateQueries({
-          predicate: (q) => q.queryKey[0] === 'posts',
+        updatePostInListCaches(queryClient, variables.targetId, {
+          likesCount: data.likesCount,
+          dislikesCount: data.dislikesCount,
         });
       } else if (variables.targetType === ReactionTargetType.COMMENT) {
         queryClient.setQueryData(

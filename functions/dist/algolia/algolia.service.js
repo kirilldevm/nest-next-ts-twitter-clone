@@ -61,15 +61,12 @@ let AlgoliaService = class AlgoliaService {
         if (createdAt != null) {
             if (typeof createdAt === 'number') {
                 date =
-                    createdAt > 1e12
-                        ? new Date(createdAt)
-                        : new Date(createdAt * 1000);
+                    createdAt > 1e12 ? new Date(createdAt) : new Date(createdAt * 1000);
             }
             else if (typeof createdAt === 'string') {
                 date = new Date(createdAt);
             }
-            else if (typeof createdAt === 'object' &&
-                createdAt !== null) {
+            else if (typeof createdAt === 'object' && createdAt !== null) {
                 const obj = createdAt;
                 const seconds = obj.seconds ?? obj._seconds;
                 if (typeof seconds === 'number') {
@@ -79,7 +76,7 @@ let AlgoliaService = class AlgoliaService {
                     date = obj.toDate();
                 }
                 else {
-                    date = new Date(String(createdAt));
+                    date = new Date(safeStr(createdAt));
                 }
             }
         }

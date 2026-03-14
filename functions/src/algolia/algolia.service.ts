@@ -78,24 +78,19 @@ export class AlgoliaService {
     if (createdAt != null) {
       if (typeof createdAt === 'number') {
         date =
-          createdAt > 1e12
-            ? new Date(createdAt)
-            : new Date(createdAt * 1000);
+          createdAt > 1e12 ? new Date(createdAt) : new Date(createdAt * 1000);
       } else if (typeof createdAt === 'string') {
         date = new Date(createdAt);
-      } else if (
-        typeof createdAt === 'object' &&
-        createdAt !== null
-      ) {
+      } else if (typeof createdAt === 'object' && createdAt !== null) {
         const obj = createdAt as Record<string, unknown>;
-        const seconds =
-          (obj.seconds as number) ?? (obj._seconds as number);
+        const seconds = (obj.seconds as number) ?? (obj._seconds as number);
+
         if (typeof seconds === 'number') {
           date = new Date(seconds * 1000);
         } else if ('toDate' in obj && typeof obj.toDate === 'function') {
           date = (obj.toDate as () => Date)();
         } else {
-          date = new Date(String(createdAt));
+          date = new Date(safeStr(createdAt));
         }
       }
     }

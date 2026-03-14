@@ -142,7 +142,7 @@ export default function PostPage({ postId }: PostPageProps) {
         />
       )}
 
-      <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
+      <Box sx={{ mt: 2, pt: 2 }}>
         <Typography
           variant='caption'
           sx={{
