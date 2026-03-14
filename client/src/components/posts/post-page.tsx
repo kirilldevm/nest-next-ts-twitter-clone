@@ -1,5 +1,6 @@
 'use client';
 
+import CommentList from '@/components/comments/comment-list';
 import Link from '@/components/link';
 import PostCard from '@/components/posts/post-card';
 import { PAGES } from '@/config/pages.config';
@@ -141,30 +142,19 @@ export default function PostPage({ postId }: PostPageProps) {
         />
       )}
 
-      <Box sx={{ mt: 4, pt: 3 }}>
+      <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
         <Typography
           variant='caption'
           sx={{
             display: 'block',
             color: 'text.secondary',
-            textAlign: 'center',
+            fontWeight: 600,
             mb: 2,
           }}
         >
           COMMENTS
         </Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 120,
-          }}
-        >
-          <Typography variant='body2' color='text.secondary'>
-            Comments coming soon
-          </Typography>
-        </Box>
+        <CommentList postId={postId} />
       </Box>
     </Box>
   );

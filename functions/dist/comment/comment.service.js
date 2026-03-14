@@ -61,8 +61,9 @@ let CommentService = class CommentService {
             if (!post) {
                 throw new common_1.NotFoundException('Post not found');
             }
+            let parent = null;
             if (parentId) {
-                const parent = await this.commentRepository.getComment(parentId, transaction);
+                parent = await this.commentRepository.getComment(parentId, transaction);
                 if (!parent || parent.postId !== dto.postId) {
                     throw new common_1.BadRequestException('Invalid parent comment');
                 }
@@ -82,11 +83,8 @@ let CommentService = class CommentService {
                 createdAt: now,
                 updatedAt: now,
             }, transaction);
-            if (parentId) {
-                const parent = await this.commentRepository.getComment(parentId, transaction);
-                if (parent) {
-                    await this.commentRepository.updateComment(parentId, { replyCount: parent.replyCount + 1 }, transaction);
-                }
+            if (parent) {
+                await this.commentRepository.updateComment(parentId, { replyCount: parent.replyCount + 1 }, transaction);
             }
             await this.postRepository.updatePost(dto.postId, { commentsCount: (post.commentsCount ?? 0) + 1 }, transaction);
             return comment;
@@ -109,10 +107,10 @@ let CommentService = class CommentService {
         });
     }
     async updateComment(id, dto) {
-        await this.commentRepository.updateComment(id, { content: dto.content });
         const comment = await this.commentRepository.getComment(id);
         if (!comment)
             throw new common_1.NotFoundException('Comment not found');
+        await this.commentRepository.updateComment(id, { content: dto.content });
         return comment;
     }
     async deleteComment(id) {
@@ -121,17 +119,18 @@ let CommentService = class CommentService {
             throw new common_1.NotFoundException('Comment not found');
         }
         await admin.firestore().runTransaction(async (transaction) => {
+            let parent = null;
+            if (comment.parentId) {
+                parent = await this.commentRepository.getComment(comment.parentId, transaction);
+            }
+            const post = await this.postRepository.getPost(comment.postId, transaction);
             await this.commentRepository.updateComment(id, {
                 content: '[deleted]',
                 isDeleted: true,
             }, transaction);
-            if (comment.parentId) {
-                const parent = await this.commentRepository.getComment(comment.parentId, transaction);
-                if (parent) {
-                    await this.commentRepository.updateComment(comment.parentId, { replyCount: Math.max(0, parent.replyCount - 1) }, transaction);
-                }
+            if (parent) {
+                await this.commentRepository.updateComment(comment.parentId, { replyCount: Math.max(0, parent.replyCount - 1) }, transaction);
             }
-            const post = await this.postRepository.getPost(comment.postId, transaction);
             if (post) {
                 await this.postRepository.updatePost(comment.postId, { commentsCount: Math.max(0, (post.commentsCount ?? 0) - 1) }, transaction);
             }

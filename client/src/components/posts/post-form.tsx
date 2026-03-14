@@ -43,6 +43,7 @@ export default function PostForm({ postId }: PostFormProps) {
   );
 
   const [formError, setFormError] = useState<string | null>(null);
+  const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isPending = isCreating || isUpdating;
@@ -78,6 +79,7 @@ export default function PostForm({ postId }: PostFormProps) {
 
   useEffect(() => {
     if (post) {
+      setRemoveExistingPhoto(false);
       reset({
         title: post.title,
         text: post.text,
@@ -92,6 +94,7 @@ export default function PostForm({ postId }: PostFormProps) {
       updatePost({
         data,
         currentPhotoURL: post.photoURL ?? undefined,
+        removePhoto: removeExistingPhoto,
       });
     } else {
       createPost(data);
@@ -103,6 +106,11 @@ export default function PostForm({ postId }: PostFormProps) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  }
+
+  function handleRemoveExistingPhoto() {
+    setRemoveExistingPhoto(true);
+    setImagePreview(null);
   }
 
   if (isEditMode && isLoadingPost) {
@@ -136,7 +144,8 @@ export default function PostForm({ postId }: PostFormProps) {
   }
 
   const displayImage =
-    imagePreview ?? (post as Post | undefined)?.photoURL ?? null;
+    imagePreview ??
+    (removeExistingPhoto ? null : (post as Post | undefined)?.photoURL ?? null);
 
   return (
     <Card>
@@ -155,20 +164,49 @@ export default function PostForm({ postId }: PostFormProps) {
               Photo (optional)
             </Typography>
             {displayImage && (
-              <Box
-                component='img'
-                src={displayImage}
-                alt='Post'
-                sx={{
-                  width: '100%',
-                  height: 'auto',
-                  maxHeight: 450,
-                  objectFit: 'contain',
-                  mb: 1,
-                  borderRadius: 1,
-                }}
-              />
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Box
+                  component='img'
+                  src={displayImage}
+                  alt='Post'
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: 450,
+                    objectFit: 'contain',
+                    mb: 1,
+                    borderRadius: 1,
+                  }}
+                />
+                <IconButton
+                  onClick={() =>
+                    imagePreview ? handleClearPhoto() : handleRemoveExistingPhoto()
+                  }
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    bgcolor: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
+                  }}
+                >
+                  <DeleteIcon fontSize='small' />
+                </IconButton>
+              </Box>
             )}
+            {isEditMode &&
+              removeExistingPhoto &&
+              (post as Post)?.photoURL && (
+                <Button
+                  size='small'
+                  variant='outlined'
+                  onClick={() => setRemoveExistingPhoto(false)}
+                  sx={{ mb: 1, textTransform: 'none' }}
+                >
+                  Restore photo
+                </Button>
+              )}
             <Controller
               name='photoURL'
               control={control}
@@ -181,22 +219,12 @@ export default function PostForm({ postId }: PostFormProps) {
                     ).current = el;
                   }}
                   type='file'
-                  endAdornment={
-                    imagePreview && (
-                      <IconButton
-                        onClick={() => {
-                          handleClearPhoto();
-                        }}
-                      >
-                        <DeleteIcon sx={{ color: 'text.secondary' }} />
-                      </IconButton>
-                    )
-                  }
                   inputProps={{
                     accept: 'image/jpeg,image/png,image/webp,image/gif',
                   }}
                   onChange={(e) => {
                     const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) setRemoveExistingPhoto(false);
                     onChange(file ?? undefined);
                   }}
                 />

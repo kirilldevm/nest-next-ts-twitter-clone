@@ -61,9 +61,13 @@ export class PostService {
   async updatePost(
     id: string,
     data: PostFormData,
-    currentPhotoURL?: string | null,
+    options?: {
+      currentPhotoURL?: string | null;
+      removePhoto?: boolean;
+    },
   ): Promise<Post> {
     const { photoURL: photoFile, ...rest } = data;
+    const { currentPhotoURL, removePhoto } = options ?? {};
 
     let newPhotoURL: string | undefined;
     let uploadedPath: string | undefined;
@@ -75,9 +79,11 @@ export class PostService {
     }
 
     try {
+      const photoPayload =
+        removePhoto ? null : photoFile ? newPhotoURL : undefined;
       const response = await api.patch<Post>(ENDPOINTS.POST.BY_ID(id), {
         ...rest,
-        photoURL: newPhotoURL,
+        ...(photoPayload !== undefined && { photoURL: photoPayload }),
       });
 
       if (newPhotoURL && currentPhotoURL) {

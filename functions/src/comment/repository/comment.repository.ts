@@ -17,6 +17,7 @@ export class CommentRepository {
     if (!data) return null;
 
     const toDate = (v: unknown): Date => {
+      if (v instanceof Date) return v;
       if (v && typeof v === 'object' && 'toDate' in v) {
         return (v as admin.firestore.Timestamp).toDate();
       }
@@ -66,10 +67,12 @@ export class CommentRepository {
 
     if (transaction) {
       transaction.set(docRef, comment);
-      const doc = await transaction.get(docRef);
-      const mapped = this.mapDoc(doc);
-      if (!mapped) throw new Error('Failed to create comment');
-      return mapped;
+
+      return this.mapDoc({
+        id: docRef.id,
+        exists: true,
+        data: () => comment,
+      } as admin.firestore.DocumentSnapshot) as Comment;
     }
 
     await docRef.set(comment);

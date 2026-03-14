@@ -1,7 +1,7 @@
 'use client';
 
-import { PAGES } from '@/config/pages.config';
 import ReactionButtons from '@/components/reactions/reaction-buttons';
+import { PAGES } from '@/config/pages.config';
 import { formatRelativeTime } from '@/helpers';
 import type { Post } from '@/types';
 import { ReactionTargetType } from '@/types/reaction.type';

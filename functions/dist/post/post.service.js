@@ -56,8 +56,12 @@ let PostService = class PostService {
             update.title = title;
         if (text !== undefined)
             update.text = text;
-        if (photoURL !== undefined)
+        if (photoURL !== undefined) {
             update.photoURL = photoURL;
+            if (photoURL === null && post.photoURL) {
+                await this.storageService.deleteFileByUrl(post.photoURL);
+            }
+        }
         return this.postRepository.updatePost(postId, update);
     }
     async deletePost(postId, userId) {

@@ -57,7 +57,12 @@ export class PostService {
     const update: Partial<typeof post> = {};
     if (title !== undefined) update.title = title;
     if (text !== undefined) update.text = text;
-    if (photoURL !== undefined) update.photoURL = photoURL;
+    if (photoURL !== undefined) {
+      update.photoURL = photoURL;
+      if (photoURL === null && post.photoURL) {
+        await this.storageService.deleteFileByUrl(post.photoURL);
+      }
+    }
 
     return this.postRepository.updatePost(postId, update);
   }

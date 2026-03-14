@@ -13,6 +13,10 @@ const projectId = process.env.PROJECT_ID;
 const clientEmail = process.env.CLIENT_EMAIL;
 const privateKey = process.env.PRIVATE_KEY;
 
+const storageBucket =
+  process.env.STORAGE_BUCKET ??
+  `${process.env.GCLOUD_PROJECT ?? process.env.PROJECT_ID ?? 'fir-twitter-clone-ec0b2'}.appspot.com`;
+
 if (projectId && clientEmail && privateKey && !privateKey.startsWith('<')) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -20,9 +24,12 @@ if (projectId && clientEmail && privateKey && !privateKey.startsWith('<')) {
       clientEmail,
       privateKey: privateKey.replace(/\\n/g, '\n'),
     }),
+    storageBucket: process.env.STORAGE_BUCKET ?? `${projectId}.appspot.com`,
   });
 } else {
-  admin.initializeApp();
+  admin.initializeApp({
+    storageBucket,
+  });
 }
 
 const origins = (process.env.CORS_ORIGIN ?? '')

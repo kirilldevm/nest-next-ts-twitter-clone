@@ -41,10 +41,16 @@ export function useUpdatePostMutation(postId: string) {
     mutationFn: ({
       data,
       currentPhotoURL,
+      removePhoto,
     }: {
       data: PostFormData;
       currentPhotoURL?: string | null;
-    }) => postService.updatePost(postId, data, currentPhotoURL),
+      removePhoto?: boolean;
+    }) =>
+      postService.updatePost(postId, data, {
+        currentPhotoURL,
+        removePhoto,
+      }),
     onSuccess: (data) => {
       queryClient.setQueryData(QUERY_KEYS.POST.BY_ID(postId), data);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POST.LIST });

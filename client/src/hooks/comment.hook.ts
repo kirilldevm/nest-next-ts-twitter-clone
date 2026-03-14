@@ -17,7 +17,11 @@ export function useComment(commentId: string | undefined) {
   });
 }
 
-export function useComments(postId: string | undefined, parentId?: string | null) {
+export function useComments(
+  postId: string | undefined,
+  parentId?: string | null,
+  options?: { enabled?: boolean },
+) {
   return useInfiniteQuery({
     queryKey: QUERY_KEYS.COMMENT.LIST(postId ?? '', parentId),
     queryFn: ({ pageParam }) =>
@@ -29,7 +33,7 @@ export function useComments(postId: string | undefined, parentId?: string | null
       }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
-    enabled: !!postId,
+    enabled: !!postId && options?.enabled !== false,
   });
 }
 
@@ -37,7 +41,8 @@ export function useCreateCommentMutation(postId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateCommentParams) => commentService.createComment(data),
+    mutationFn: (data: CreateCommentParams) =>
+      commentService.createComment(data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.COMMENT.LIST(postId),
@@ -47,7 +52,9 @@ export function useCreateCommentMutation(postId: string) {
           queryKey: QUERY_KEYS.COMMENT.LIST(postId, variables.parentId),
         });
       }
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POST.BY_ID(postId) });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.POST.BY_ID(postId),
+      });
       toast.success('Comment added');
     },
     onError: (error) => {
@@ -89,10 +96,21 @@ export function useDeleteCommentMutation(postId: string) {
     mutationFn: (id: string) => commentService.deleteComment(id),
     onSuccess: (_, commentId) => {
       queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.COMMENT.LIST(postId),
+        predicate: (q) =>
+          Array.isArray(q.queryKey) &&
+          q.queryKey[0] === 'comment' &&
+          q.queryKey[1] === 'list' &&
+          q.queryKey[2] === postId,
       });
-      queryClient.removeQueries({ queryKey: QUERY_KEYS.COMMENT.BY_ID(commentId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POST.BY_ID(postId) });
+
+      queryClient.removeQueries({
+        queryKey: QUERY_KEYS.COMMENT.BY_ID(commentId),
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.POST.BY_ID(postId),
+      });
+
       toast.success('Comment deleted');
     },
     onError: (error) => {

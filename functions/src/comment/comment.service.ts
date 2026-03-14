@@ -27,15 +27,15 @@ export class CommentService {
 
     return admin.firestore().runTransaction(async (transaction) => {
       const post = await this.postRepository.getPost(dto.postId, transaction);
+
       if (!post) {
         throw new NotFoundException('Post not found');
       }
 
+      let parent: Comment | null = null;
       if (parentId) {
-        const parent = await this.commentRepository.getComment(
-          parentId,
-          transaction,
-        );
+        parent = await this.commentRepository.getComment(parentId, transaction);
+
         if (!parent || parent.postId !== dto.postId) {
           throw new BadRequestException('Invalid parent comment');
         }
@@ -60,18 +60,12 @@ export class CommentService {
         transaction,
       );
 
-      if (parentId) {
-        const parent = await this.commentRepository.getComment(
-          parentId,
+      if (parent) {
+        await this.commentRepository.updateComment(
+          parentId!,
+          { replyCount: parent.replyCount + 1 },
           transaction,
         );
-        if (parent) {
-          await this.commentRepository.updateComment(
-            parentId,
-            { replyCount: parent.replyCount + 1 },
-            transaction,
-          );
-        }
       }
 
       await this.postRepository.updatePost(
@@ -86,9 +80,11 @@ export class CommentService {
 
   async getComment(id: string): Promise<Comment> {
     const comment = await this.commentRepository.getComment(id);
+
     if (!comment) {
       throw new NotFoundException('Comment not found');
     }
+
     return comment;
   }
 
@@ -100,6 +96,7 @@ export class CommentService {
   }): Promise<{ items: Comment[]; nextCursor: string | null }> {
     const parentId =
       options.parentId === undefined ? null : (options.parentId ?? null);
+
     return this.commentRepository.listComments({
       postId: options.postId,
       parentId,
@@ -109,9 +106,12 @@ export class CommentService {
   }
 
   async updateComment(id: string, dto: UpdateCommentDto): Promise<Comment> {
-    await this.commentRepository.updateComment(id, { content: dto.content });
     const comment = await this.commentRepository.getComment(id);
+
     if (!comment) throw new NotFoundException('Comment not found');
+
+    await this.commentRepository.updateComment(id, { content: dto.content });
+
     return comment;
   }
 
@@ -122,6 +122,19 @@ export class CommentService {
     }
 
     await admin.firestore().runTransaction(async (transaction) => {
+      let parent: Comment | null = null;
+      if (comment.parentId) {
+        parent = await this.commentRepository.getComment(
+          comment.parentId,
+          transaction,
+        );
+      }
+
+      const post = await this.postRepository.getPost(
+        comment.postId,
+        transaction,
+      );
+
       await this.commentRepository.updateComment(
         id,
         {
@@ -131,24 +144,14 @@ export class CommentService {
         transaction,
       );
 
-      if (comment.parentId) {
-        const parent = await this.commentRepository.getComment(
-          comment.parentId,
+      if (parent) {
+        await this.commentRepository.updateComment(
+          comment.parentId!,
+          { replyCount: Math.max(0, parent.replyCount - 1) },
           transaction,
         );
-        if (parent) {
-          await this.commentRepository.updateComment(
-            comment.parentId,
-            { replyCount: Math.max(0, parent.replyCount - 1) },
-            transaction,
-          );
-        }
       }
 
-      const post = await this.postRepository.getPost(
-        comment.postId,
-        transaction,
-      );
       if (post) {
         await this.postRepository.updatePost(
           comment.postId,

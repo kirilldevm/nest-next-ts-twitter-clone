@@ -63,7 +63,10 @@ let StorageService = class StorageService {
         if (!path)
             return;
         try {
-            const bucket = admin.storage().bucket();
+            const app = admin.app();
+            const bucketName = app.options.storageBucket ??
+                `${app.options.projectId ?? 'fir-twitter-clone-ec0b2'}.appspot.com`;
+            const bucket = admin.storage().bucket(bucketName);
             await bucket.file(path).delete();
         }
         catch (err) {
