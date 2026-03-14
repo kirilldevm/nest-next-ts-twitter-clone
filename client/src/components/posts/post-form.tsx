@@ -72,9 +72,11 @@ export default function PostForm({ postId }: PostFormProps) {
     if (photoURL) {
       const url = URL.createObjectURL(photoURL);
       setImagePreview(url);
+
       return () => URL.revokeObjectURL(url);
+    } else {
+      setImagePreview(null);
     }
-    setImagePreview(null);
   }, [photoURL]);
 
   useEffect(() => {
@@ -103,6 +105,7 @@ export default function PostForm({ postId }: PostFormProps) {
 
   function handleClearPhoto() {
     setValue('photoURL', undefined);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -145,7 +148,9 @@ export default function PostForm({ postId }: PostFormProps) {
 
   const displayImage =
     imagePreview ??
-    (removeExistingPhoto ? null : (post as Post | undefined)?.photoURL ?? null);
+    (removeExistingPhoto
+      ? null
+      : ((post as Post | undefined)?.photoURL ?? null));
 
   return (
     <Card>
@@ -180,7 +185,9 @@ export default function PostForm({ postId }: PostFormProps) {
                 />
                 <IconButton
                   onClick={() =>
-                    imagePreview ? handleClearPhoto() : handleRemoveExistingPhoto()
+                    imagePreview
+                      ? handleClearPhoto()
+                      : handleRemoveExistingPhoto()
                   }
                   sx={{
                     position: 'absolute',
@@ -195,18 +202,16 @@ export default function PostForm({ postId }: PostFormProps) {
                 </IconButton>
               </Box>
             )}
-            {isEditMode &&
-              removeExistingPhoto &&
-              (post as Post)?.photoURL && (
-                <Button
-                  size='small'
-                  variant='outlined'
-                  onClick={() => setRemoveExistingPhoto(false)}
-                  sx={{ mb: 1, textTransform: 'none' }}
-                >
-                  Restore photo
-                </Button>
-              )}
+            {isEditMode && removeExistingPhoto && (post as Post)?.photoURL && (
+              <Button
+                size='small'
+                variant='outlined'
+                onClick={() => setRemoveExistingPhoto(false)}
+                sx={{ mb: 1, textTransform: 'none' }}
+              >
+                Restore photo
+              </Button>
+            )}
             <Controller
               name='photoURL'
               control={control}

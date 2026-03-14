@@ -2,6 +2,7 @@
 
 import CommentForm from '@/components/comments/comment-form';
 import ReactionButtons from '@/components/reactions/reaction-buttons';
+import { PAGES } from '@/config/pages.config';
 import { useAuth } from '@/context/auth.context';
 import { formatRelativeTime } from '@/helpers';
 import {
@@ -19,6 +20,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import Link from 'next/link';
 import { useState } from 'react';
 
 type CommentItemProps = {
@@ -39,8 +41,13 @@ export default function CommentItem({
   const [showReplies, setShowReplies] = useState(false);
 
   const isCreator = !!user && comment.authorId === user.id;
-  const { data: repliesData, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useComments(postId, comment.id, { enabled: showReplies });
+  const {
+    data: repliesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useComments(postId, comment.id, { enabled: showReplies });
+
   const replies = repliesData?.pages.flatMap((p) => p.items) ?? [];
   const replyCount = comment.replyCount ?? 0;
   const hasReplies = replyCount > 0;
@@ -51,6 +58,7 @@ export default function CommentItem({
 
   function handleSaveEdit() {
     const trimmed = editContent.trim();
+
     if (trimmed && trimmed !== comment.content) {
       updateComment(
         { id: comment.id, content: trimmed },
@@ -63,44 +71,67 @@ export default function CommentItem({
 
   const avatarLetter = comment.authorDisplayName[0]?.toUpperCase() ?? '?';
   const maxDepth = 4;
-  const indent = Math.min(depth, maxDepth) * 2;
+  const indent = Math.min(depth, maxDepth);
 
   return (
     <Box
       sx={{
         display: 'flex',
-        gap: 1.5,
-        py: 1.5,
-        pl: indent,
+        gap: 1,
+        py: 1,
+        pl: depth < maxDepth ? indent : 0.5,
         borderLeft: depth > 0 ? 1 : 0,
         borderColor: 'divider',
-        ml: depth > 0 ? 2 : 0,
+        ml: depth > 0 && depth < maxDepth ? 1 : 0.5,
       }}
     >
-      <Avatar
-        src={comment.authorPhotoURL ?? undefined}
-        alt={comment.authorDisplayName}
-        sx={{ width: 32, height: 32, flexShrink: 0 }}
-      >
-        {avatarLetter}
-      </Avatar>
-
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 0.5,
+            gap: 1,
             flexWrap: 'wrap',
             mb: 0.25,
           }}
         >
-          <Typography variant='subtitle2' fontWeight={600}>
-            {comment.authorDisplayName}
-          </Typography>
-          <Typography variant='caption' color='text.secondary'>
-            · {formatRelativeTime(comment.createdAt)}
-          </Typography>
+          <Box
+            component={Link}
+            href={PAGES.PROFILE_BY_ID(comment.authorId)}
+            sx={{
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              '&:hover': {
+                '& > .MuiTypography-subtitle2': {
+                  textDecoration: 'underline',
+                },
+              },
+            }}
+          >
+            <Avatar
+              src={comment.authorPhotoURL ?? undefined}
+              alt={comment.authorDisplayName}
+              sx={{
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+                textDecoration: 'none',
+              }}
+            >
+              {avatarLetter}
+            </Avatar>
+
+            <Typography variant='subtitle2' fontWeight={600}>
+              {comment.authorDisplayName}
+            </Typography>
+
+            <Typography variant='caption' color='text.secondary'>
+              · {formatRelativeTime(comment.createdAt)}
+            </Typography>
+          </Box>
+
           {isCreator && !comment.isDeleted && (
             <Box sx={{ display: 'flex', gap: 0.25, ml: 'auto' }}>
               <IconButton
@@ -114,6 +145,7 @@ export default function CommentItem({
               >
                 <EditIcon sx={{ fontSize: 14 }} />
               </IconButton>
+
               <IconButton
                 size='small'
                 sx={{ p: 0.25 }}
@@ -127,7 +159,9 @@ export default function CommentItem({
         </Box>
 
         {isEditing ? (
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 0.5 }}>
+          <Box
+            sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 0.5 }}
+          >
             <Box
               component='textarea'
               value={editContent}
@@ -170,7 +204,7 @@ export default function CommentItem({
           <Typography
             variant='body2'
             color={comment.isDeleted ? 'text.secondary' : 'text.primary'}
-            sx={{ fontStyle: comment.isDeleted ? 'italic' : undefined }}
+            sx={{ fontStyle: comment.isDeleted ? 'italic' : undefined, ml: 5 }}
           >
             {comment.isDeleted ? '[deleted]' : comment.content}
           </Typography>
@@ -198,15 +232,18 @@ export default function CommentItem({
               sx={{
                 color: 'text.secondary',
                 p: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
                 '&:hover': { color: 'primary.main' },
               }}
               onClick={() => setIsReplying(!isReplying)}
             >
               <ChatBubbleOutlineIcon sx={{ fontSize: 18 }} />
+              <Typography variant='caption' color='text.secondary'>
+                Reply
+              </Typography>
             </IconButton>
-            <Typography variant='caption' color='text.secondary'>
-              Reply
-            </Typography>
           </Box>
         )}
 
@@ -222,7 +259,7 @@ export default function CommentItem({
         )}
 
         {hasReplies && (
-          <Box sx={{ mt: 1.5 }}>
+          <Box sx={{ mt: 1 }}>
             {!showReplies ? (
               <Typography
                 component='button'
@@ -240,6 +277,20 @@ export default function CommentItem({
               </Typography>
             ) : (
               <>
+                <Typography
+                  component='button'
+                  variant='caption'
+                  color='primary'
+                  onClick={() => setShowReplies(false)}
+                  sx={{
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  Hide replies
+                </Typography>
                 {replies.map((reply) => (
                   <CommentItem
                     key={reply.id}

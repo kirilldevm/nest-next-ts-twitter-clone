@@ -1,14 +1,11 @@
 import { QUERY_KEYS } from '@/config/query-keys.config';
 import { reactionService } from '@/services/reaction.service';
-import type { Comment } from '@/types/comment.type';
 import type { Post } from '@/types';
+import type { Comment } from '@/types/comment.type';
 import { ReactionTargetType } from '@/types/reaction.type';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-export function useReaction(
-  targetType: ReactionTargetType,
-  targetId: string,
-) {
+export function useReaction(targetType: ReactionTargetType, targetId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.REACTION.BY_TARGET(targetType, targetId),
     queryFn: () => reactionService.getReaction(targetType, targetId),
@@ -57,6 +54,9 @@ export function useSetReactionMutation() {
         );
         queryClient.invalidateQueries({
           predicate: (q) => q.queryKey[0] === 'comment',
+        });
+        queryClient.invalidateQueries({
+          predicate: (q) => q.queryKey[0] === 'comments',
         });
       }
     },

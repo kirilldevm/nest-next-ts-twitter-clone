@@ -26,15 +26,20 @@ export class StorageService {
 
     try {
       const app = admin.app();
+
       const bucketName =
         app.options.storageBucket ??
         `${app.options.projectId ?? 'fir-twitter-clone-ec0b2'}.appspot.com`;
+
       const bucket = admin.storage().bucket(bucketName);
+
       await bucket.file(path).delete();
     } catch (err) {
       // 404 = file already deleted; log but don't throw
       const code = (err as { code?: number })?.code;
+
       if (code === 404 || code === 5) return;
+
       console.warn('Failed to delete storage file:', path, err);
     }
   }
