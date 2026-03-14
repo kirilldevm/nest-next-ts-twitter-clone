@@ -12,6 +12,7 @@ import CardMedia from '@mui/material/CardMedia';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export type PostCardAuthor = {
   displayName: string;
@@ -34,6 +35,7 @@ export default function PostCard({
   const displayName = author.displayName;
   const authorId = post.authorId;
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
+  const router = useRouter();
 
   return (
     <Box
@@ -80,6 +82,33 @@ export default function PostCard({
             color: 'inherit',
           }}
         >
+          {post.photoURL && (
+            <Box
+              sx={{
+                mt: 1.5,
+                borderRadius: 2,
+                overflow: 'hidden',
+                maxWidth: 360,
+              }}
+            >
+              <CardMedia
+                component='img'
+                image={post.photoURL}
+                alt={post.title}
+                sx={{
+                  borderRadius: 2,
+                  maxHeight:
+                    variant === 'compact'
+                      ? 200
+                      : variant === 'detail'
+                        ? 500
+                        : 400,
+                  objectFit: 'cover',
+                }}
+              />
+            </Box>
+          )}
+
           {post.title && (
             <Typography
               variant='body1'
@@ -97,6 +126,7 @@ export default function PostCard({
               {post.title}
             </Typography>
           )}
+
           <Typography
             variant='body2'
             color='text.secondary'
@@ -112,33 +142,6 @@ export default function PostCard({
             {post.text}
           </Typography>
         </Box>
-
-        {post.photoURL && (
-          <Box
-            sx={{
-              mt: 1.5,
-              borderRadius: 2,
-              overflow: 'hidden',
-              maxWidth: 360,
-            }}
-          >
-            <CardMedia
-              component='img'
-              image={post.photoURL}
-              alt={post.title}
-              sx={{
-                borderRadius: 2,
-                maxHeight:
-                  variant === 'compact'
-                    ? 200
-                    : variant === 'detail'
-                      ? 500
-                      : 400,
-                objectFit: 'cover',
-              }}
-            />
-          </Box>
-        )}
 
         {showReactions && (
           <Box
@@ -159,16 +162,16 @@ export default function PostCard({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <IconButton
                 size='small'
+                onClick={() => router.push(PAGES.POST_PAGE(post.id))}
                 sx={{ color: 'text.secondary', p: 0.5 }}
-                disabled
               >
                 <ChatBubbleOutlineIcon fontSize='small' />
+                {(post.commentsCount ?? 0) > 0 && (
+                  <Typography variant='caption' color='text.secondary'>
+                    {post.commentsCount}
+                  </Typography>
+                )}
               </IconButton>
-              {(post.commentsCount ?? 0) > 0 && (
-                <Typography variant='caption' color='text.secondary'>
-                  {post.commentsCount}
-                </Typography>
-              )}
             </Box>
           </Box>
         )}
