@@ -11,14 +11,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostService = void 0;
 const common_1 = require("@nestjs/common");
+const algolia_service_1 = require("../algolia/algolia.service");
 const storage_service_1 = require("../storage/storage.service");
+const user_repository_1 = require("../user/repository/user.repository");
 const post_repository_1 = require("./repository/post.repository");
 let PostService = class PostService {
     postRepository;
     storageService;
-    constructor(postRepository, storageService) {
+    algoliaService;
+    userRepository;
+    constructor(postRepository, storageService, algoliaService, userRepository) {
         this.postRepository = postRepository;
         this.storageService = storageService;
+        this.algoliaService = algoliaService;
+        this.userRepository = userRepository;
     }
     async createPost(authorId, dto) {
         return this.postRepository.createPost({
@@ -41,6 +47,52 @@ let PostService = class PostService {
     }
     async listPosts(options) {
         return this.postRepository.listPosts(options);
+    }
+    async searchPosts(query, options) {
+        const trimmed = query?.trim();
+        if (!trimmed) {
+            throw new common_1.BadRequestException('Search query is required');
+        }
+        try {
+            const result = await this.algoliaService.searchPosts(trimmed, options);
+            const postIds = result.items
+                .map((p) => p.id)
+                .filter((id) => !!id);
+            const postsFromFirestore = await Promise.all(postIds.map((id) => this.postRepository.getPost(id)));
+            const posts = postsFromFirestore.filter((p) => p !== null);
+            const authorIds = [
+                ...new Set(posts.map((p) => p.authorId).filter(Boolean)),
+            ];
+            const userMap = new Map();
+            await Promise.all(authorIds.map(async (id) => {
+                const user = await this.userRepository.getUser(id);
+                if (user) {
+                    const displayName = [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+                        user.email ||
+                        'Unknown';
+                    userMap.set(id, {
+                        displayName,
+                        photoURL: user.photoURL ?? null,
+                    });
+                }
+            }));
+            const items = posts.map((post) => ({
+                ...post,
+                author: userMap.get(post.authorId),
+            }));
+            return {
+                items,
+                nextPage: result.nextPage,
+                totalHits: result.totalHits,
+            };
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : 'Search service unavailable';
+            if (message.includes('not configured')) {
+                throw new common_1.BadRequestException('Search is not configured. Set ALGOLIA_APP_ID and ALGOLIA_ADMIN_API_KEY.');
+            }
+            throw err;
+        }
     }
     async updatePost(postId, userId, dto) {
         const post = await this.postRepository.getPost(postId);
@@ -82,6 +134,8 @@ exports.PostService = PostService;
 exports.PostService = PostService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [post_repository_1.PostRepository,
-        storage_service_1.StorageService])
+        storage_service_1.StorageService,
+        algolia_service_1.AlgoliaService,
+        user_repository_1.UserRepository])
 ], PostService);
 //# sourceMappingURL=post.service.js.map

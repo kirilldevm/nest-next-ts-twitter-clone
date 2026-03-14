@@ -4,8 +4,11 @@ import FeedPostCard, {
   FeedPostCardSkeleton,
 } from '@/components/feed/feed-post-card';
 import { useFeedPosts } from '@/hooks/feed.hook';
+import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import InputAdornment from '@mui/material/InputAdornment';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -21,6 +24,9 @@ export default function FeedPage() {
     hasPrevPage,
     nextPage,
     prevPage,
+    searchQuery,
+    setSearchQuery,
+    totalHits,
   } = useFeedPosts();
 
   if (isError) {
@@ -35,9 +41,30 @@ export default function FeedPage() {
 
   return (
     <Box>
-      <Typography variant='h5' sx={{ fontWeight: 600, mb: 2 }}>
-        Feed
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+        <Typography variant='h5' sx={{ fontWeight: 600 }}>
+          Feed
+        </Typography>
+        <TextField
+          placeholder='Search posts by text...'
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size='small'
+          sx={{ maxWidth: 320, minWidth: 200 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <SearchIcon color='action' />
+              </InputAdornment>
+            ),
+          }}
+        />
+        {totalHits !== undefined && (
+          <Typography variant='body2' color='text.secondary'>
+            {totalHits} result{totalHits !== 1 ? 's' : ''}
+          </Typography>
+        )}
+      </Box>
 
       {isLoading ? (
         <Box>
@@ -55,7 +82,9 @@ export default function FeedPage() {
           }}
         >
           <Typography variant='body2' color='text.secondary'>
-            No posts yet. Create your first post!
+            {searchQuery.trim()
+              ? 'No posts match your search.'
+              : 'No posts yet. Create your first post!'}
           </Typography>
         </Box>
       ) : (

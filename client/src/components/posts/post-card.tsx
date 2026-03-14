@@ -32,7 +32,7 @@ export default function PostCard({
   variant = 'full',
   showReactions = true,
 }: PostCardProps) {
-  const displayName = author.displayName;
+  const displayName = author?.displayName ?? 'Unknown';
   const authorId = post.authorId;
   const avatarLetter = displayName[0]?.toUpperCase() ?? '?';
   const router = useRouter();
@@ -64,11 +64,17 @@ export default function PostCard({
             mb: 0.5,
           }}
         >
-          <Box component={Link} href={PAGES.PROFILE_BY_ID(authorId)}>
+          {authorId ? (
+            <Box component={Link} href={PAGES.PROFILE_BY_ID(authorId)}>
+              <Typography variant='subtitle2' fontWeight={600}>
+                {displayName}
+              </Typography>
+            </Box>
+          ) : (
             <Typography variant='subtitle2' fontWeight={600}>
               {displayName}
             </Typography>
-          </Box>
+          )}
           <Typography variant='caption' color='text.secondary'>
             · {formatRelativeTime(post.createdAt)}
           </Typography>

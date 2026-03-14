@@ -98,14 +98,24 @@ export class PostRepository {
     authorId?: string;
     limit?: number;
     cursor?: string;
+    sortBy?: 'createdAt' | 'engagement';
   }): Promise<{ items: Post[]; nextCursor: string | null }> {
     const limit = Math.min(options.limit ?? LIMIT_DEFAULT, LIMIT_MAX);
+    const sortBy = options.sortBy ?? 'engagement';
 
-    let query: admin.firestore.Query = options.authorId
-      ? this.postsDb
-          .where('authorId', '==', options.authorId)
-          .orderBy('createdAt', 'desc')
-      : this.postsDb.orderBy('createdAt', 'desc');
+    let query: admin.firestore.Query;
+    if (options.authorId) {
+      query = this.postsDb
+        .where('authorId', '==', options.authorId)
+        .orderBy('createdAt', 'desc');
+    } else if (sortBy === 'engagement') {
+      query = this.postsDb
+        .orderBy('likesCount', 'desc')
+        .orderBy('commentsCount', 'desc')
+        .orderBy('createdAt', 'desc');
+    } else {
+      query = this.postsDb.orderBy('createdAt', 'desc');
+    }
 
     if (options.cursor) {
       const cursorDoc = await this.postsDb.doc(options.cursor).get();

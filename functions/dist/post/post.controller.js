@@ -26,11 +26,24 @@ let PostController = class PostController {
     createPost(req, createPostDto) {
         return this.postService.createPost(req.user.uid, createPostDto);
     }
-    listPosts(authorId, limit, cursor) {
+    listPosts(authorId, limit, cursor, sortBy) {
         return this.postService.listPosts({
             authorId: authorId || undefined,
             limit: limit ? parseInt(limit, 10) : undefined,
             cursor: cursor || undefined,
+            sortBy: sortBy === 'createdAt' || sortBy === 'engagement'
+                ? sortBy
+                : 'engagement',
+        });
+    }
+    searchPosts(query, page, limit) {
+        const pageNum = page ? parseInt(page, 10) : 0;
+        const limitNum = limit ? parseInt(limit, 10) : undefined;
+        return this.postService.searchPosts(query ?? '', {
+            page: Number.isNaN(pageNum) ? 0 : pageNum,
+            limit: limitNum !== undefined && Number.isNaN(limitNum)
+                ? undefined
+                : limitNum,
         });
     }
     getPost(id) {
@@ -58,10 +71,20 @@ __decorate([
     __param(0, (0, common_1.Query)('authorId')),
     __param(1, (0, common_1.Query)('limit')),
     __param(2, (0, common_1.Query)('cursor')),
+    __param(3, (0, common_1.Query)('sortBy')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:returntype", void 0)
+], PostController.prototype, "listPosts", null);
+__decorate([
+    (0, common_1.Get)('search'),
+    __param(0, (0, common_1.Query)('q')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String, String]),
     __metadata("design:returntype", void 0)
-], PostController.prototype, "listPosts", null);
+], PostController.prototype, "searchPosts", null);
 __decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),

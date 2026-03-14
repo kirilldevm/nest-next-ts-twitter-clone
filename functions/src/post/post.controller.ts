@@ -30,11 +30,32 @@ export class PostController {
     @Query('authorId') authorId?: string,
     @Query('limit') limit?: string,
     @Query('cursor') cursor?: string,
+    @Query('sortBy') sortBy?: string,
   ) {
     return this.postService.listPosts({
       authorId: authorId || undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       cursor: cursor || undefined,
+      sortBy:
+        sortBy === 'createdAt' || sortBy === 'engagement'
+          ? sortBy
+          : 'engagement',
+    });
+  }
+
+  @Get('search')
+  searchPosts(
+    @Query('q') query?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 0;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.postService.searchPosts(query ?? '', {
+      page: Number.isNaN(pageNum) ? 0 : pageNum,
+      limit: limitNum !== undefined && Number.isNaN(limitNum)
+        ? undefined
+        : limitNum,
     });
   }
 

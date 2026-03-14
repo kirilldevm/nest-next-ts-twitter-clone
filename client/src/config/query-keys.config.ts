@@ -8,8 +8,17 @@ export const QUERY_KEYS = {
     BY_ID: (id: string) => ['post', id] as const,
   },
   POSTS: {
-    LIST: (authorId?: string) =>
-      authorId ? ['posts', 'list', authorId] : ['posts', 'list'],
+    LIST: (authorId?: string, sortBy?: string) =>
+      (['posts', 'list', authorId, sortBy].filter(
+        (x): x is string => x != null && x !== '',
+      ) as readonly string[]),
+    SEARCH: (query: string, page?: number) =>
+      [
+        'posts',
+        'search',
+        query,
+        ...(page !== undefined ? [page] : []),
+      ] as const,
   },
   REACTION: {
     BY_TARGET: (targetType: string, targetId: string) =>

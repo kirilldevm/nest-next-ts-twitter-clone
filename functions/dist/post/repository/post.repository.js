@@ -110,11 +110,22 @@ let PostRepository = class PostRepository {
     }
     async listPosts(options) {
         const limit = Math.min(options.limit ?? LIMIT_DEFAULT, LIMIT_MAX);
-        let query = options.authorId
-            ? this.postsDb
+        const sortBy = options.sortBy ?? 'engagement';
+        let query;
+        if (options.authorId) {
+            query = this.postsDb
                 .where('authorId', '==', options.authorId)
-                .orderBy('createdAt', 'desc')
-            : this.postsDb.orderBy('createdAt', 'desc');
+                .orderBy('createdAt', 'desc');
+        }
+        else if (sortBy === 'engagement') {
+            query = this.postsDb
+                .orderBy('likesCount', 'desc')
+                .orderBy('commentsCount', 'desc')
+                .orderBy('createdAt', 'desc');
+        }
+        else {
+            query = this.postsDb.orderBy('createdAt', 'desc');
+        }
         if (options.cursor) {
             const cursorDoc = await this.postsDb.doc(options.cursor).get();
             if (cursorDoc.exists) {

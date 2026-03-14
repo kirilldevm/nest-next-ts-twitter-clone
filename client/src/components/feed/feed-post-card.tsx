@@ -4,30 +4,31 @@ import PostCard from '@/components/posts/post-card';
 import { getDisplayName } from '@/helpers';
 import { useUser } from '@/hooks/user.hook';
 import type { Post } from '@/types';
+import type { SearchPostItem } from '@/services/posts.service';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 
 type FeedPostCardProps = {
-  post: Post;
+  post: Post | SearchPostItem;
 };
 
 export default function FeedPostCard({ post }: FeedPostCardProps) {
-  const { data: user, isLoading } = useUser(post.authorId);
+  const hasEmbeddedAuthor = 'author' in post && post.author;
+  const { data: user, isLoading } = useUser(
+    hasEmbeddedAuthor ? undefined : post.authorId || undefined,
+  );
 
-  if (isLoading) {
+  if (!hasEmbeddedAuthor && isLoading) {
     return <FeedPostCardSkeleton />;
   }
 
-  return (
-    <PostCard
-      post={post}
-      author={
-        user
-          ? { displayName: getDisplayName(user), photoURL: user.photoURL }
-          : undefined
-      }
-    />
-  );
+  const author = hasEmbeddedAuthor
+    ? post.author!
+    : user
+      ? { displayName: getDisplayName(user), photoURL: user.photoURL }
+      : { displayName: 'Unknown', photoURL: null as string | null };
+
+  return <PostCard post={post} author={author} />;
 }
 
 export function FeedPostCardSkeleton() {

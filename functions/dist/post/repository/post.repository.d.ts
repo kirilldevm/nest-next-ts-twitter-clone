@@ -11,6 +11,7 @@ export declare class PostRepository {
         authorId?: string;
         limit?: number;
         cursor?: string;
+        sortBy?: 'createdAt' | 'engagement';
     }): Promise<{
         items: Post[];
         nextCursor: string | null;
