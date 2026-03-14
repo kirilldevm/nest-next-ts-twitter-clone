@@ -1,8 +1,12 @@
 import { QUERY_KEYS } from '@/config/query-keys.config';
 import { reactionService } from '@/services/reaction.service';
 import type { Post } from '@/types';
-import type { Comment } from '@/types/comment.type';
+import type {
+  Comment,
+  ListCommentsResponse,
+} from '@/types/comment.type';
 import { ReactionTargetType } from '@/types/reaction.type';
+import type { InfiniteData } from '@tanstack/react-query';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useReaction(targetType: ReactionTargetType, targetId: string) {
@@ -12,6 +16,35 @@ export function useReaction(targetType: ReactionTargetType, targetId: string) {
     enabled: !!targetId,
     staleTime: 0,
   });
+}
+
+function updateCommentInInfiniteCache(
+  queryClient: ReturnType<typeof import('@tanstack/react-query').useQueryClient>,
+  commentId: string,
+  updates: { likesCount: number; dislikesCount: number },
+) {
+  queryClient.setQueriesData(
+    {
+      predicate: (q) =>
+        Array.isArray(q.queryKey) &&
+        q.queryKey[0] === 'comment' &&
+        q.queryKey[1] === 'list',
+    },
+    (old: InfiniteData<ListCommentsResponse> | undefined) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          items: page.items.map((c) =>
+            c.id === commentId
+              ? { ...c, likesCount: updates.likesCount, dislikesCount: updates.dislikesCount }
+              : c,
+          ),
+        })),
+      };
+    },
+  );
 }
 
 export function useSetReactionMutation() {
@@ -52,11 +85,9 @@ export function useSetReactionMutation() {
                 }
               : old,
         );
-        queryClient.invalidateQueries({
-          predicate: (q) => q.queryKey[0] === 'comment',
-        });
-        queryClient.invalidateQueries({
-          predicate: (q) => q.queryKey[0] === 'comments',
+        updateCommentInInfiniteCache(queryClient, variables.targetId, {
+          likesCount: data.likesCount,
+          dislikesCount: data.dislikesCount,
         });
       }
     },
