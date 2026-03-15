@@ -160,20 +160,24 @@ export default function PostCard({
               dislikesCount={post.dislikesCount ?? 0}
             />
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton
-                size='small'
-                onClick={() => router.push(PAGES.POST_PAGE(post.id))}
-                sx={{ color: 'text.secondary', p: 0.5 }}
-              >
-                <ChatBubbleOutlineIcon fontSize='small' />
-                {(post.commentsCount ?? 0) > 0 && (
-                  <Typography variant='caption' color='text.secondary'>
-                    {post.commentsCount}
-                  </Typography>
-                )}
-              </IconButton>
-            </Box>
+            <IconButton
+              size='small'
+              onClick={() => router.push(PAGES.POST_PAGE(post.id))}
+              sx={{
+                color: 'text.secondary',
+                p: 0.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <ChatBubbleOutlineIcon fontSize='small' />
+              {(post.commentsCount ?? 0) > 0 && (
+                <Typography variant='caption' color='text.secondary'>
+                  {post.commentsCount}
+                </Typography>
+              )}
+            </IconButton>
           </Box>
         )}
       </Box>

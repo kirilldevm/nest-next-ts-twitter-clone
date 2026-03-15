@@ -53,6 +53,19 @@ type SearchPostsResponse = {
   nextPage: number | null;
   totalHits?: number;
 };
+type InfinitePostsData = { pages: ListPostsResponse[]; pageParams: unknown[] };
+
+function applyReactionUpdatesToPosts<T extends { id: string; likesCount?: number; dislikesCount?: number }>(
+  items: T[],
+  postId: string,
+  updates: { likesCount: number; dislikesCount: number },
+): T[] {
+  return items.map((p) =>
+    p.id === postId
+      ? { ...p, likesCount: updates.likesCount, dislikesCount: updates.dislikesCount }
+      : p,
+  );
+}
 
 function updatePostInListCaches(
   queryClient: ReturnType<typeof import('@tanstack/react-query').useQueryClient>,
@@ -64,16 +77,32 @@ function updatePostInListCaches(
       predicate: (q) =>
         Array.isArray(q.queryKey) && q.queryKey[0] === 'posts',
     },
-    (old: ListPostsResponse | SearchPostsResponse | undefined) => {
-      if (!old || !('items' in old) || !Array.isArray(old.items)) return old;
-      return {
-        ...old,
-        items: old.items.map((p) =>
-          p.id === postId
-            ? { ...p, likesCount: updates.likesCount, dislikesCount: updates.dislikesCount }
-            : p,
-        ),
-      };
+    (
+      old:
+        | ListPostsResponse
+        | SearchPostsResponse
+        | InfinitePostsData
+        | undefined,
+    ) => {
+      if (!old) return old;
+      // useInfiniteQuery: { pages: [{ items, nextCursor }, ...], pageParams }
+      if ('pages' in old && Array.isArray(old.pages)) {
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            items: applyReactionUpdatesToPosts(page.items, postId, updates),
+          })),
+        };
+      }
+      // useQuery list / search: { items, nextCursor } or { items, nextPage }
+      if ('items' in old && Array.isArray(old.items)) {
+        return {
+          ...old,
+          items: applyReactionUpdatesToPosts(old.items, postId, updates),
+        };
+      }
+      return old;
     },
   );
 }
