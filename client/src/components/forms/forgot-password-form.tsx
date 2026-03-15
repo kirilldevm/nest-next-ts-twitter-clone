@@ -135,6 +135,7 @@ export default function ForgotPasswordForm() {
         Remember your password?{' '}
         <Link
           href='/signin'
+          prefetch={false}
           style={{ color: 'inherit', textDecoration: 'underline' }}
         >
           Sign in

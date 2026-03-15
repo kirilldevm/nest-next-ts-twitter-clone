@@ -2,6 +2,7 @@
 
 import Link from '@/components/link';
 import ContinueWithGoogleButton from '@/components/ui/continue-with-google-button';
+import { useRouter } from 'next/navigation';
 import {
   useResendVerificationEmailMutation,
   useSigninMutation,
@@ -18,6 +19,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 export default function LoginForm() {
+  const router = useRouter();
   const { mutate: signin, isPending: isSigningIn } = useSigninMutation();
   const { mutate: resendVerification, isPending: isResending } =
     useResendVerificationEmailMutation();
@@ -140,6 +142,7 @@ export default function LoginForm() {
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Link
             href='/reset-password'
+            prefetch={false}
             style={{
               fontSize: '0.875rem',
               color: 'inherit',
@@ -192,12 +195,22 @@ export default function LoginForm() {
         sx={{ mt: 2, textAlign: 'center' }}
       >
         Don&apos;t have an account?{' '}
-        <Link
-          href='/signup'
-          style={{ color: 'inherit', textDecoration: 'underline' }}
+        <Typography
+          component='button'
+          type='button'
+          onClick={() => router.push('/signup')}
+          sx={{
+            color: 'inherit',
+            textDecoration: 'underline',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            font: 'inherit',
+            p: 0,
+          }}
         >
           Create account
-        </Link>
+        </Typography>
       </Typography>
     </Box>
   );

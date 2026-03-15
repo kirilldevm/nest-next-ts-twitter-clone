@@ -1,98 +1,160 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# TwiXter Backend (Firebase Functions)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS API running on Firebase Functions (Cloud Run). Handles auth, users, posts, comments, reactions, and search (Algolia with Firestore fallback).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Technologies
 
-## Description
+- **NestJS** 11 – API framework
+- **Firebase Admin SDK** – Auth verification, Firestore, Storage
+- **Firebase Functions** (Node.js 22) – Serverless hosting
+- **Passport + Firebase JWT** – Token-based auth guard
+- **Class Validator / Class Transformer** – DTO validation and serialization
+- **Resend** – Email (verification, password reset)
+- **Algolia** – Post search (optional; falls back to Firestore if unavailable)
+- **Express + CORS + Helmet** – HTTP layer and security
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Project Structure
 
-## Project setup
-
-```bash
-$ npm install
+```
+functions/
+├── src/
+│   ├── main.ts           # Express + Nest bootstrap, CORS, Firebase init
+│   ├── app.module.ts     # Root module
+│   ├── auth/             # Signup, signin, Google auth, password reset
+│   ├── user/             # User CRUD, profile
+│   ├── post/             # Posts, search (Algolia + Firestore)
+│   ├── comment/          # Comments
+│   ├── reaction/          # Likes/reactions
+│   ├── email/            # Resend email service
+│   ├── algolia/          # Algolia search service
+│   └── storage/          # Firebase Storage helpers
+├── test/                 # E2E tests (Firebase emulators)
+├── .env.example
+└── package.json
 ```
 
-## Compile and run the project
+## Environment Variables
 
-```bash
-# development
-$ npm run start
+Copy `.env.example` to `.env` and fill in:
 
-# watch mode
-$ npm run start:dev
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `CORS_ORIGIN` | Comma-separated allowed origins (include `https://`) | Yes (prod) |
+| `PROJECT_ID` | Firebase project ID | Yes |
+| `CLIENT_EMAIL` | Service account `client_email` | Yes |
+| `PRIVATE_KEY` | Service account `private_key` (with `\n` for newlines) | Yes |
+| `STORAGE_BUCKET` | Firebase Storage bucket (default: `{project}.appspot.com`) | Optional |
+| `RESEND_API_KEY` | Resend API key for emails | Yes |
+| `RESEND_FROM` | Sender email (e.g. `onboarding@resend.dev`) | Yes |
+| `ALGOLIA_APP_ID` | Algolia app ID (search) | Optional |
+| `ALGOLIA_ADMIN_API_KEY` | Algolia admin API key | Optional |
+| `ALGOLIA_INDEX_NAME` | Algolia index name (default: `posts`) | Optional |
 
-# production mode
-$ npm run start:prod
+### Local (.env)
+
+```env
+CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000
+
+PROJECT_ID=your-project-id
+CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+RESEND_API_KEY=re_xxx
+RESEND_FROM=onboarding@resend.dev
+
+ALGOLIA_APP_ID=xxx
+ALGOLIA_ADMIN_API_KEY=xxx
 ```
 
-## Run tests
+### Production (Cloud Run / Google Cloud Console)
 
-```bash
-# unit tests
-$ npm run test
+Set variables under **Cloud Run** → **api** service → **Variables & Secrets**.
 
-# e2e tests
-$ npm run test:e2e
+**CORS for production:**
 
-# test coverage
-$ npm run test:cov
+```
+https://your-project.web.app,https://your-project.firebaseapp.com
 ```
 
-## Deployment
+Use full URLs including `https://`. Do not truncate values.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Local Development
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### With Firebase Emulators
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Start emulators + built functions
+npm run serve
+
+# Watch mode (rebuild on change)
+npm run serve:watch
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Functions run at `http://127.0.0.1:5001/<project-id>/us-central1/api`.
 
-## Resources
+### Without emulators (standalone Nest)
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+npm run build
+npm run start:prod
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Uses real Firebase services. Set `.env` accordingly.
 
-## Support
+## Scripts
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+| Script | Description |
+|--------|-------------|
+| `npm run build` | Compile TypeScript |
+| `npm run serve` | Build + start emulators (functions, firestore, auth, storage) |
+| `npm run serve:watch` | Watch build + emulators |
+| `npm run lint` | ESLint with auto-fix |
+| `npm run test` | Unit tests |
+| `npm run test:e2e` | E2E tests (with emulators) |
+| `npm run deploy` | Deploy to Firebase Functions |
 
-## Stay in touch
+## API Overview
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/auth/signup` | POST | No | Register (email/password) |
+| `/auth/signin` | POST | No | Login (email/password) |
+| `/auth/signin-with-google` | POST | No | Login with Google token |
+| `/auth/forgot-password` | POST | No | Send password reset email |
+| `/auth/resend-verification-email` | POST | No | Resend verification email |
+| `/user/:id` | GET | Yes | Get user by ID |
+| `/user/:id` | PATCH | Yes | Update user |
+| `/post` | GET | No | List posts (cursor pagination) |
+| `/post/search` | GET | No | Search posts |
+| `/post` | POST | Yes | Create post |
+| `/post/:id` | GET | No | Get post |
+| `/post/:id` | PATCH | Yes | Update post |
+| `/post/:id` | DELETE | Yes | Delete post |
+| `/comment` | GET | No | List comments |
+| `/comment` | POST | Yes | Create comment |
+| `/reaction` | POST | Yes | Set reaction (like/unlike) |
 
-## License
+## Deploy
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+From the project root:
+
+```bash
+npm run deploy:functions
+```
+
+Or from `functions/`:
+
+```bash
+firebase deploy --only functions
+```
+
+Predeploy runs `npm run build`. Lint runs from the root `npm run deploy` script.
+
+## E2E Tests
+
+```bash
+# Start emulators, run E2E tests, stop emulators
+npm run test:e2e
+```
+
+Do not run `npm run serve` in another terminal; the test command manages the emulators.

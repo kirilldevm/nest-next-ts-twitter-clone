@@ -1,6 +1,7 @@
 'use client';
 
 import Link from '@/components/link';
+import { useRouter } from 'next/navigation';
 import ContinueWithGoogleButton from '@/components/ui/continue-with-google-button';
 import { useSignupMutation } from '@/hooks/auth.hook';
 import { type SignupInput, signupSchema } from '@/schemas/auth.schema';
@@ -16,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 export default function RegisterForm() {
+  const router = useRouter();
   const { mutate: signup, isPending: isSigningUp } = useSignupMutation();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -259,12 +261,22 @@ export default function RegisterForm() {
         sx={{ mt: 2, textAlign: 'center' }}
       >
         Already have an account?{' '}
-        <Link
-          href='/signin'
-          style={{ color: 'inherit', textDecoration: 'underline' }}
+        <Typography
+          component='button'
+          type='button'
+          onClick={() => router.push('/signin')}
+          sx={{
+            color: 'inherit',
+            textDecoration: 'underline',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            font: 'inherit',
+            p: 0,
+          }}
         >
           Sign in
-        </Link>
+        </Typography>
       </Typography>
     </Box>
   );
