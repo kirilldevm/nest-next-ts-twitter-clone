@@ -11,7 +11,39 @@
   "hosting": {
     "public": "client/out",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "/_next/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ],
     "rewrites": [
+      {
+        "source": "/posts/*/edit",
+        "destination": "/posts/__/edit.html"
+      },
+      {
+        "source": "/posts/**",
+        "destination": "/posts/__.html"
+      },
+      {
+        "source": "/profile/**",
+        "destination": "/profile/__.html"
+      },
       {
         "source": "**",
         "destination": "/index.html"

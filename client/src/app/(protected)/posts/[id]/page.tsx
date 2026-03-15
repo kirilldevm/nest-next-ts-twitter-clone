@@ -1,16 +1,11 @@
 import PostPage from '@/components/posts/post-page';
-import { fetchPostIds } from '@/lib/fetch-post-ids';
+import PostPageClient from './post-page-client';
 
+// Placeholder for static export; client reads real id from URL via useParams
 export async function generateStaticParams() {
-  return fetchPostIds();
+  return [{ id: '__' }];
 }
 
-type PageProps = {
-  params: Promise<{ id: string }>;
-};
-
-export default async function PostViewRoute({ params }: PageProps) {
-  const { id } = await params;
-
-  return <PostPage postId={id} />;
+export default function PostViewRoute() {
+  return <PostPageClient />;
 }

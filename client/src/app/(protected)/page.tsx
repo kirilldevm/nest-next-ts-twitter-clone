@@ -1,15 +1,5 @@
-'use client';
-
-import { PAGES } from '@/config/pages.config';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import FeedPage from '@/components/feed/feed-page';
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace(PAGES.FEED);
-  }, [router]);
-
-  return null;
+  return <FeedPage />;
 }

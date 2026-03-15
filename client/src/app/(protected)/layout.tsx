@@ -1,11 +1,11 @@
 'use client';
 
 import Header from '@/components/ui/header';
-import { authRoutes } from '@/config/routes.config';
+import { authRoutes, DEFAULT_LOGIN_REDIRECT } from '@/config/routes.config';
 import { useAuth } from '@/context/auth.context';
 import { Container } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function ProtectedLayout({
   children,
@@ -15,13 +15,23 @@ export default function ProtectedLayout({
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     if (loading) return;
 
     if (!user) {
+      if (hasRedirected.current) return;
+      hasRedirected.current = true;
       const loginPath = authRoutes[0]; // PAGES.LOGIN
-      router.replace(`${loginPath}?redirect=${encodeURIComponent(pathname)}`);
+      const isAuthRoute = authRoutes.some((r) => pathname?.startsWith(r));
+
+      const redirectTo = isAuthRoute ? DEFAULT_LOGIN_REDIRECT : pathname;
+      router.replace(
+        `${loginPath}?redirect=${encodeURIComponent(redirectTo || '/')}`,
+      );
+    } else {
+      hasRedirected.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- router ref causes effect loops on nav
   }, [user, loading, pathname]);

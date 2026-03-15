@@ -1,24 +1,19 @@
 import PostForm from '@/components/posts/post-form';
-import { fetchPostIds } from '@/lib/fetch-post-ids';
 import { Typography } from '@mui/material';
+import EditPostPageClient from './edit-post-page-client';
 
-export async function generateStaticParams() {
-  return fetchPostIds();
+// Placeholder for static export; client reads real id from URL
+export function generateStaticParams() {
+  return [{ id: '__' }];
 }
 
-type PageProps = {
-  params: Promise<{ id: string }>;
-};
-
-export default async function EditPostPage({ params }: PageProps) {
-  const { id } = await params;
-
+export default function EditPostPage() {
   return (
     <>
       <Typography variant='h4' sx={{ mb: 4, fontWeight: 500 }}>
         Edit post
       </Typography>
-      <PostForm postId={id} />
+      <EditPostPageClient />
     </>
   );
 }

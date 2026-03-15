@@ -4,7 +4,7 @@
   "scripts": {
     "deploy": "npm run lint --prefix functions && cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy",
     "deploy:functions": "cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy --only functions",
-    "deploy:hosting": "npx rimraf client/.next client/out && cross-env NODE_ENV=production npm run build --prefix client && firebase deploy --only hosting"
+    "deploy:hosting": "npx rimraf client/.next client/out && cross-env NODE_ENV=production npm run build --prefix client -- --webpack && firebase deploy --only hosting"
   },
   "devDependencies": {
     "cross-env": "^7.0.3"
