@@ -1,28 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 
-const STORAGE_URL_PREFIXES = [
-  'https://firebasestorage.googleapis.com',
-  'http://127.0.0.1:9199', // Storage emulator
-  'http://localhost:9199',
-];
+/** Extract bucket and file path from Firebase Storage URL. */
+function parseStorageUrl(url: string): { bucket: string; path: string } | null {
+  if (!url || typeof url !== 'string') return null;
 
-function getPathFromStorageUrl(url: string): string | null {
-  if (!url || typeof url !== 'string' || !url.includes('/o/')) {
-    return null;
-  }
-
-  const isStorageUrl = STORAGE_URL_PREFIXES.some((p) => url.startsWith(p));
-  if (!isStorageUrl) {
-    return null;
-  }
-
+  // Format: .../v0/b/{bucket}/o/{encodedPath}?...
+  const match = url.match(/\/b\/([^/]+)\/o\/([^?#]+)/);
+  if (!match) return null;
   try {
-    const match = url.match(/\/o\/([^?]+)/);
-    if (!match) return null;
-
-    const encodedPath = match[1];
-    return decodeURIComponent(encodedPath);
+    return {
+      bucket: decodeURIComponent(match[1]),
+      path: decodeURIComponent(match[2]),
+    };
   } catch {
     return null;
   }
@@ -31,26 +21,28 @@ function getPathFromStorageUrl(url: string): string | null {
 @Injectable()
 export class StorageService {
   async deleteFileByUrl(url: string): Promise<void> {
-    const path = getPathFromStorageUrl(url);
-    if (!path) {
-      console.warn('StorageService.deleteFileByUrl: could not extract path from URL', {
-        url: url?.slice?.(0, 100),
+    const parsed = parseStorageUrl(url);
+    if (!parsed) {
+      console.warn('StorageService.deleteFileByUrl: could not parse URL', {
+        url: url?.slice?.(0, 120),
       });
       return;
     }
 
+    const { bucket: bucketName, path } = parsed;
+
     try {
-      const app = admin.app();
-      const bucketName =
-        app.options.storageBucket ??
-        `${app.options.projectId ?? 'fir-twitter-clone-ec0b2'}.appspot.com`;
       const bucket = admin.storage().bucket(bucketName);
 
       await bucket.file(path).delete({ ignoreNotFound: true });
     } catch (err) {
       const code = (err as { code?: number })?.code;
       if (code === 404 || code === 5) return;
-      console.warn('StorageService.deleteFileByUrl failed:', { path, err });
+      console.warn('StorageService.deleteFileByUrl failed:', {
+        bucketName,
+        path,
+        err,
+      });
     }
   }
 }

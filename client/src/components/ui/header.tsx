@@ -77,27 +77,25 @@ export default function Header() {
               justifyContent='space-between'
               width='100%'
             >
-              <Link
-                href={PAGES.FEED}
-                style={{
-                  textDecoration: 'none',
+              <Typography
+                variant='h6'
+                noWrap
+                component='button'
+                onClick={() => router.push(PAGES.FEED)}
+                sx={{
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  letterSpacing: '.3rem',
                   color: 'inherit',
-                  display: 'contents',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  font: 'inherit',
                 }}
               >
-                <Typography
-                  variant='h6'
-                  noWrap
-                  sx={{
-                    fontFamily: 'monospace',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    letterSpacing: '.3rem',
-                  }}
-                >
-                  TwiXter
-                </Typography>
-              </Link>
+                TwiXter
+              </Typography>
 
               <Box sx={{ flexGrow: 0, marginLeft: 'auto' }}>
                 {!user && <Link href={PAGES.LOGIN}>Sign In / Sign Up</Link>}
