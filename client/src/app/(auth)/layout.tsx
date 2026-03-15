@@ -27,7 +27,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     ) {
       router.replace(DEFAULT_LOGIN_REDIRECT);
     }
-  }, [mounted, user, loading, router, pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router ref causes effect loops on nav
+  }, [mounted, user, loading, pathname]);
 
   // Avoid hydration mismatch: auth state differs on server vs client (Firebase resolves from cache)
   if (!mounted) {

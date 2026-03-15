@@ -23,7 +23,8 @@ export default function ProtectedLayout({
       const loginPath = authRoutes[0]; // PAGES.LOGIN
       router.replace(`${loginPath}?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [user, loading, router, pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router ref causes effect loops on nav
+  }, [user, loading, pathname]);
 
   if (loading) {
     return (
