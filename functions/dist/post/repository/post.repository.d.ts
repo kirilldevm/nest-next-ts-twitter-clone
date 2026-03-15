@@ -6,7 +6,8 @@ export declare class PostRepository {
     getPost(id: string, transaction?: FirestoreTransaction): Promise<Post | null>;
     createPost(data: Omit<Post, 'id'>): Promise<Post>;
     updatePost(id: string, data: Partial<Post>, transaction?: FirestoreTransaction): Promise<Post | null>;
-    deletePost(id: string): Promise<void>;
+    deletePost(id: string, transaction?: FirestoreTransaction): Promise<void>;
+    listPostIdsByAuthorId(authorId: string, transaction?: FirestoreTransaction): Promise<string[]>;
     listPosts(options: {
         authorId?: string;
         limit?: number;

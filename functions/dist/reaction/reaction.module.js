@@ -21,7 +21,7 @@ exports.ReactionModule = ReactionModule = __decorate([
         imports: [post_module_1.PostModule, comment_module_1.CommentModule],
         controllers: [reaction_controller_1.ReactionController],
         providers: [reaction_service_1.ReactionService, reaction_repository_1.ReactionRepository],
-        exports: [reaction_service_1.ReactionService],
+        exports: [reaction_service_1.ReactionService, reaction_repository_1.ReactionRepository],
     })
 ], ReactionModule);
 //# sourceMappingURL=reaction.module.js.map

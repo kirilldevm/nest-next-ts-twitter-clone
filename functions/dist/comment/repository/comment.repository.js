@@ -117,8 +117,6 @@ let CommentRepository = class CommentRepository {
         delete update.postId;
         delete update.parentId;
         delete update.createdAt;
-        delete update.authorDisplayName;
-        delete update.authorPhotoURL;
         const filtered = Object.fromEntries(Object.entries(update).filter(([, v]) => v !== undefined));
         if (Object.keys(filtered).length > 0) {
             if (transaction) {
@@ -140,6 +138,24 @@ let CommentRepository = class CommentRepository {
         else {
             await docRef.delete();
         }
+    }
+    async listCommentIdsByAuthorId(authorId, transaction) {
+        const query = this.commentsDb
+            .where('authorId', '==', authorId)
+            .limit(500);
+        const snapshot = transaction
+            ? await transaction.get(query)
+            : await query.get();
+        return snapshot.docs.map((d) => d.id);
+    }
+    async listCommentIdsByPostId(postId, transaction) {
+        const query = this.commentsDb
+            .where('postId', '==', postId)
+            .limit(500);
+        const snapshot = transaction
+            ? await transaction.get(query)
+            : await query.get();
+        return snapshot.docs.map((d) => d.id);
     }
     async listComments(options) {
         const limit = Math.min(options.limit ?? LIMIT_DEFAULT, LIMIT_MAX);

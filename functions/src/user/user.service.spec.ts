@@ -1,4 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { CommentRepository } from '../comment/repository/comment.repository';
+import { PostRepository } from '../post/repository/post.repository';
+import { ReactionRepository } from '../reaction/repository/reaction.repository';
+import { StorageService } from '../storage/storage.service';
 import { User } from './entity/user.entity';
 import { UserRepository } from './repository/user.repository';
 import { UserService } from './user.service';
@@ -6,10 +10,17 @@ import { UserService } from './user.service';
 const mockDeleteUser = jest.fn();
 const mockUpdateUser = jest.fn();
 
+const mockRunTransaction = jest.fn((cb: (tx: unknown) => Promise<unknown>) =>
+  cb({}),
+);
+
 jest.mock('firebase-admin', () => ({
   auth: () => ({
     deleteUser: mockDeleteUser,
     updateUser: mockUpdateUser,
+  }),
+  firestore: () => ({
+    runTransaction: mockRunTransaction,
   }),
 }));
 
@@ -32,6 +43,10 @@ describe('UserService', () => {
   beforeEach(async () => {
     mockDeleteUser.mockReset();
     mockUpdateUser.mockReset();
+    mockRunTransaction.mockReset();
+    mockRunTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
+      cb({}),
+    );
 
     getUserMock = jest.fn();
     updateUserRepoMock = jest.fn().mockResolvedValue(undefined);
@@ -42,11 +57,33 @@ describe('UserService', () => {
       updateUser: updateUserRepoMock,
       deleteUser: deleteUserRepoMock,
     };
+    const mockPostRepo = {
+      listPostIdsByAuthorId: jest.fn().mockResolvedValue([]),
+      deletePost: jest.fn().mockResolvedValue(undefined),
+    };
+    const mockCommentRepo = {
+      listCommentIdsByAuthorId: jest.fn().mockResolvedValue([]),
+      listCommentIdsByPostId: jest.fn().mockResolvedValue([]),
+      deleteComment: jest.fn().mockResolvedValue(undefined),
+      updateComment: jest.fn().mockResolvedValue(undefined),
+    };
+    const mockReactionRepo = {
+      listReactionIdsByUserId: jest.fn().mockResolvedValue([]),
+      listReactionIdsByTarget: jest.fn().mockResolvedValue([]),
+      deleteReactionsByIds: jest.fn().mockResolvedValue(undefined),
+    };
+    const mockStorageService = {
+      deleteFileByUrl: jest.fn().mockResolvedValue(undefined),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
         { provide: UserRepository, useValue: mockUserRepo },
+        { provide: PostRepository, useValue: mockPostRepo },
+        { provide: CommentRepository, useValue: mockCommentRepo },
+        { provide: ReactionRepository, useValue: mockReactionRepo },
+        { provide: StorageService, useValue: mockStorageService },
       ],
     }).compile();
 
@@ -80,7 +117,11 @@ describe('UserService', () => {
     it('should delete from repository and Firebase Auth', async () => {
       await service.deleteUser('uid-123');
 
-      expect(deleteUserRepoMock).toHaveBeenCalledWith('uid-123');
+      expect(mockRunTransaction).toHaveBeenCalled();
+      expect(deleteUserRepoMock).toHaveBeenCalledWith(
+        'uid-123',
+        expect.anything(),
+      );
       expect(mockDeleteUser).toHaveBeenCalledWith('uid-123');
     });
   });

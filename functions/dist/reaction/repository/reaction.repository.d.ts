@@ -6,5 +6,8 @@ export declare class ReactionRepository {
         type: ReactionType;
     } | null>;
     setReaction(targetType: ReactionTargetType, targetId: string, userId: string, type: ReactionType, transaction?: FirestoreTransaction): Promise<void>;
+    listReactionIdsByUserId(userId: string, transaction?: FirestoreTransaction): Promise<string[]>;
+    deleteReactionsByIds(ids: string[], transaction?: FirestoreTransaction): Promise<void>;
+    listReactionIdsByTarget(targetType: ReactionTargetType, targetId: string, transaction?: FirestoreTransaction): Promise<string[]>;
     deleteReaction(targetType: ReactionTargetType, targetId: string, userId: string, transaction?: FirestoreTransaction): Promise<void>;
 }

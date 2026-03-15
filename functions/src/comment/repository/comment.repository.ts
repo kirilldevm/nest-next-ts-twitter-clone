@@ -86,7 +86,13 @@ export class CommentRepository {
     data: Partial<
       Pick<
         Comment,
-        'content' | 'isDeleted' | 'likesCount' | 'dislikesCount' | 'replyCount'
+        | 'content'
+        | 'isDeleted'
+        | 'likesCount'
+        | 'dislikesCount'
+        | 'replyCount'
+        | 'authorDisplayName'
+        | 'authorPhotoURL'
       >
     >,
     transaction?: FirestoreTransaction,
@@ -101,9 +107,6 @@ export class CommentRepository {
     delete update.postId;
     delete update.parentId;
     delete update.createdAt;
-    delete update.authorDisplayName;
-    delete update.authorPhotoURL;
-
     const filtered = Object.fromEntries(
       Object.entries(update).filter(([, v]) => v !== undefined),
     ) as Record<string, FieldValue | undefined>;
@@ -131,6 +134,32 @@ export class CommentRepository {
     } else {
       await docRef.delete();
     }
+  }
+
+  async listCommentIdsByAuthorId(
+    authorId: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<string[]> {
+    const query = this.commentsDb
+      .where('authorId', '==', authorId)
+      .limit(500);
+    const snapshot = transaction
+      ? await transaction.get(query)
+      : await query.get();
+    return snapshot.docs.map((d) => d.id);
+  }
+
+  async listCommentIdsByPostId(
+    postId: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<string[]> {
+    const query = this.commentsDb
+      .where('postId', '==', postId)
+      .limit(500);
+    const snapshot = transaction
+      ? await transaction.get(query)
+      : await query.get();
+    return snapshot.docs.map((d) => d.id);
   }
 
   async listComments(options: {

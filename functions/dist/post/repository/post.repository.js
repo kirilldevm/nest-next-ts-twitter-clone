@@ -105,8 +105,23 @@ let PostRepository = class PostRepository {
             return null;
         return this.getPost(id);
     }
-    async deletePost(id) {
-        await this.postsDb.doc(id).delete();
+    async deletePost(id, transaction) {
+        const docRef = this.postsDb.doc(id);
+        if (transaction) {
+            transaction.delete(docRef);
+        }
+        else {
+            await docRef.delete();
+        }
+    }
+    async listPostIdsByAuthorId(authorId, transaction) {
+        const query = this.postsDb
+            .where('authorId', '==', authorId)
+            .limit(500);
+        const snapshot = transaction
+            ? await transaction.get(query)
+            : await query.get();
+        return snapshot.docs.map((d) => d.id);
     }
     async listPosts(options) {
         const limit = Math.min(options.limit ?? LIMIT_DEFAULT, LIMIT_MAX);

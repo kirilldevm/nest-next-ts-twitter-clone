@@ -195,7 +195,6 @@ let AuthService = class AuthService {
                 });
             }
         }
-        console.log('signin with Google successful', userData);
         return {
             success: true,
             message: 'Signin successful',

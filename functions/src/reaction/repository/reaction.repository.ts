@@ -59,6 +59,48 @@ export class ReactionRepository {
     }
   }
 
+  async listReactionIdsByUserId(
+    userId: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<string[]> {
+    const query = this.reactionsDb
+      .where('userId', '==', userId)
+      .limit(500);
+    const snapshot = transaction
+      ? await transaction.get(query)
+      : await query.get();
+    return snapshot.docs.map((d) => d.id);
+  }
+
+  async deleteReactionsByIds(
+    ids: string[],
+    transaction?: FirestoreTransaction,
+  ): Promise<void> {
+    for (const id of ids) {
+      const docRef = this.reactionsDb.doc(id);
+      if (transaction) {
+        transaction.delete(docRef);
+      } else {
+        await docRef.delete();
+      }
+    }
+  }
+
+  async listReactionIdsByTarget(
+    targetType: ReactionTargetType,
+    targetId: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<string[]> {
+    const query = this.reactionsDb
+      .where('targetType', '==', targetType)
+      .where('targetId', '==', targetId)
+      .limit(500);
+    const snapshot = transaction
+      ? await transaction.get(query)
+      : await query.get();
+    return snapshot.docs.map((d) => d.id);
+  }
+
   async deleteReaction(
     targetType: ReactionTargetType,
     targetId: string,

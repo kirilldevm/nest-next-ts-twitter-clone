@@ -22,7 +22,7 @@ exports.PostModule = PostModule = __decorate([
         imports: [algolia_module_1.AlgoliaModule, user_module_1.UserModule],
         controllers: [post_controller_1.PostController],
         providers: [post_service_1.PostService, post_repository_1.PostRepository, storage_service_1.StorageService],
-        exports: [post_service_1.PostService, post_repository_1.PostRepository],
+        exports: [post_service_1.PostService, post_repository_1.PostRepository, storage_service_1.StorageService],
     })
 ], PostModule);
 //# sourceMappingURL=post.module.js.map

@@ -77,6 +77,36 @@ let ReactionRepository = class ReactionRepository {
             await docRef.set(data);
         }
     }
+    async listReactionIdsByUserId(userId, transaction) {
+        const query = this.reactionsDb
+            .where('userId', '==', userId)
+            .limit(500);
+        const snapshot = transaction
+            ? await transaction.get(query)
+            : await query.get();
+        return snapshot.docs.map((d) => d.id);
+    }
+    async deleteReactionsByIds(ids, transaction) {
+        for (const id of ids) {
+            const docRef = this.reactionsDb.doc(id);
+            if (transaction) {
+                transaction.delete(docRef);
+            }
+            else {
+                await docRef.delete();
+            }
+        }
+    }
+    async listReactionIdsByTarget(targetType, targetId, transaction) {
+        const query = this.reactionsDb
+            .where('targetType', '==', targetType)
+            .where('targetId', '==', targetId)
+            .limit(500);
+        const snapshot = transaction
+            ? await transaction.get(query)
+            : await query.get();
+        return snapshot.docs.map((d) => d.id);
+    }
     async deleteReaction(targetType, targetId, userId, transaction) {
         const id = docId(targetType, targetId, userId);
         const docRef = this.reactionsDb.doc(id);

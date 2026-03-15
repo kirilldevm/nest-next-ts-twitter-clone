@@ -10,6 +10,6 @@ import { PostService } from './post.service';
   imports: [AlgoliaModule, UserModule],
   controllers: [PostController],
   providers: [PostService, PostRepository, StorageService],
-  exports: [PostService, PostRepository],
+  exports: [PostService, PostRepository, StorageService],
 })
 export class PostModule {}

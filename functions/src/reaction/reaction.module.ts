@@ -9,6 +9,6 @@ import { ReactionService } from './reaction.service';
   imports: [PostModule, CommentModule],
   controllers: [ReactionController],
   providers: [ReactionService, ReactionRepository],
-  exports: [ReactionService],
+  exports: [ReactionService, ReactionRepository],
 })
 export class ReactionModule {}

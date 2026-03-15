@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as admin from 'firebase-admin';
+import { FirestoreTransaction } from 'src/types';
 import { User } from '../entity/user.entity';
 
 @Injectable()
@@ -37,24 +38,39 @@ export class UserRepository {
     return this.getUser(data.id);
   }
 
-  async deleteUser(id: string) {
-    await this.usersDb.doc(id).delete();
+  async deleteUser(id: string, transaction?: FirestoreTransaction) {
+    const docRef = this.usersDb.doc(id);
+    if (transaction) {
+      transaction.delete(docRef);
+    } else {
+      await docRef.delete();
+    }
   }
 
-  async updateUser(id: string, data: Partial<User>): Promise<void> {
+  async updateUser(
+    id: string,
+    data: Partial<User>,
+    transaction?: FirestoreTransaction,
+  ): Promise<void> {
     const docRef = this.usersDb.doc(id);
-    const doc = await docRef.get();
+    const doc = transaction
+      ? await transaction.get(docRef)
+      : await docRef.get();
 
     if (!doc.exists) {
       throw new NotFoundException('User not found');
     }
 
     if (data.email) {
-      const existingUser = await this.usersDb
-        .where('email', '==', data.email)
-        .get();
+      const emailQuery = this.usersDb.where('email', '==', data.email);
+      const existingSnapshot = transaction
+        ? await transaction.get(emailQuery)
+        : await emailQuery.get();
 
-      if (existingUser.docs.length > 0 && existingUser.docs[0].id !== id) {
+      if (
+        existingSnapshot.docs.length > 0 &&
+        existingSnapshot.docs[0].id !== id
+      ) {
         throw new BadRequestException('Email is already in use');
       }
     }
@@ -62,6 +78,13 @@ export class UserRepository {
       throw new BadRequestException('Email is not verified');
     }
 
-    await doc.ref.update(data);
+    const { id: _id, ...update } = data as Partial<User> & { id?: string };
+    if (Object.keys(update).length > 0) {
+      if (transaction) {
+        transaction.update(docRef, update);
+      } else {
+        await doc.ref.update(update);
+      }
+    }
   }
 }

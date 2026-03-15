@@ -90,8 +90,29 @@ export class PostRepository {
     return this.getPost(id);
   }
 
-  async deletePost(id: string): Promise<void> {
-    await this.postsDb.doc(id).delete();
+  async deletePost(
+    id: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<void> {
+    const docRef = this.postsDb.doc(id);
+    if (transaction) {
+      transaction.delete(docRef);
+    } else {
+      await docRef.delete();
+    }
+  }
+
+  async listPostIdsByAuthorId(
+    authorId: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<string[]> {
+    const query = this.postsDb
+      .where('authorId', '==', authorId)
+      .limit(500);
+    const snapshot = transaction
+      ? await transaction.get(query)
+      : await query.get();
+    return snapshot.docs.map((d) => d.id);
   }
 
   async listPosts(options: {
