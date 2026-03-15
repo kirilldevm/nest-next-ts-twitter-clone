@@ -110,7 +110,7 @@ let AuthService = class AuthService {
             }
             return {
                 success: true,
-                message: 'User created successfully',
+                message: 'Your account was created. Please check your email for a verification link before signing in.',
                 user: userData,
             };
         }
@@ -156,10 +156,9 @@ let AuthService = class AuthService {
             }
         }
         if (!userData.emailVerified) {
-            await this.emailService.sendVerificationLink(userData.email);
             return {
                 success: false,
-                message: 'Email not verified. Please check your email for a verification link.',
+                message: 'Please verify your email before signing in. Check your inbox (and spam folder) for the link we sent when you created your account.',
             };
         }
         return {
@@ -200,6 +199,32 @@ let AuthService = class AuthService {
             message: 'Signin successful',
             user: userData,
         };
+    }
+    async resendVerificationEmail(dto) {
+        const { email } = dto;
+        let userRecord;
+        try {
+            userRecord = await admin.auth().getUserByEmail(email);
+        }
+        catch (err) {
+            if ((0, error_utils_1.isFirebaseAuthError)(err) && err.code === 'auth/user-not-found') {
+                throw new common_1.BadRequestException('No account found with this email');
+            }
+            throw err;
+        }
+        const hasPassword = userRecord.providerData.some((p) => p.providerId === 'password');
+        if (!hasPassword) {
+            throw new common_1.BadRequestException('This account uses Google sign-in. Use "Continue with Google" instead.');
+        }
+        const user = await this.userRepository.getUser(userRecord.uid);
+        if (!user) {
+            throw new common_1.BadRequestException('No account found with this email');
+        }
+        if (user.emailVerified) {
+            throw new common_1.BadRequestException('Email is already verified. You can sign in now.');
+        }
+        await this.emailService.sendVerificationLink(email);
+        return { ok: true };
     }
     async checkEmailForPasswordReset(dto) {
         try {

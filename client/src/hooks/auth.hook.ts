@@ -55,3 +55,9 @@ export function useCheckAndSendPasswordResetEmailMutation() {
       authService.checkAndSendPasswordResetEmail(email),
   });
 }
+
+export function useResendVerificationEmailMutation() {
+  return useMutation({
+    mutationFn: (email: string) => authService.resendVerificationEmail(email),
+  });
+}

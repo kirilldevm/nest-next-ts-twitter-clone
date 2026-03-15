@@ -1,5 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as admin from 'firebase-admin';
+import { EmailService } from 'src/email/email.service';
 import { CommentRepository } from '../comment/repository/comment.repository';
 import { PostRepository } from '../post/repository/post.repository';
 import { ReactionTargetType } from '../reaction/entity/reaction.entity';
@@ -16,10 +21,29 @@ export class UserService {
     private readonly commentRepository: CommentRepository,
     private readonly reactionRepository: ReactionRepository,
     private readonly storageService: StorageService,
+    private readonly emailService: EmailService,
   ) {}
 
   async getUser(id: string) {
     return this.userRepository.getUser(id);
+  }
+
+  async sendVerificationEmail(uid: string) {
+    const user = await this.userRepository.getUser(uid);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+
+    await this.emailService.sendVerificationLink(user.email);
+
+    return {
+      success: true,
+      message: 'Verification email sent',
+    };
   }
 
   async deleteUser(uid: string) {

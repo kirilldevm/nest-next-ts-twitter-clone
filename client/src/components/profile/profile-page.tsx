@@ -7,7 +7,8 @@ import { PAGES } from '@/config/pages.config';
 import { useAuth } from '@/context/auth.context';
 import { getDisplayName } from '@/helpers';
 import { usePosts } from '@/hooks/posts.hook';
-import { useUser } from '@/hooks/user.hook';
+import { useSendVerificationEmail, useUser } from '@/hooks/user.hook';
+import { Alert } from '@mui/material';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -20,6 +21,7 @@ type ProfilePageProps = {
 };
 
 export default function ProfilePage({ userId }: ProfilePageProps) {
+  const { mutate: sendVerificationEmail } = useSendVerificationEmail();
   const { user: authUser } = useAuth();
   const isOwnProfile = !userId || userId === authUser?.id;
   const targetUserId = userId ?? authUser?.id;
@@ -69,6 +71,20 @@ export default function ProfilePage({ userId }: ProfilePageProps) {
 
   return (
     <Box>
+      {isOwnProfile && !user.emailVerified && (
+        <Alert severity='info' sx={{ mb: 2 }}>
+          Please verify your email to continue.
+          <Button
+            variant='text'
+            color='primary'
+            onClick={() => sendVerificationEmail()}
+            sx={{ textTransform: 'none' }}
+          >
+            Send verification email
+          </Button>
+        </Alert>
+      )}
+
       <Box
         sx={{
           display: 'flex',

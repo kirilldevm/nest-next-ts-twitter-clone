@@ -27,4 +27,9 @@ export class AuthController {
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.checkEmailForPasswordReset(dto);
   }
+
+  @Post('resend-verification-email')
+  resendVerificationEmail(@Body() dto: ForgotPasswordDto) {
+    return this.authService.resendVerificationEmail(dto);
+  }
 }

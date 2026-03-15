@@ -27,4 +27,7 @@ export declare class AuthController {
     forgotPassword(dto: ForgotPasswordDto): Promise<{
         ok: boolean;
     }>;
+    resendVerificationEmail(dto: ForgotPasswordDto): Promise<{
+        ok: boolean;
+    }>;
 }

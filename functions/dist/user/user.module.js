@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModule = void 0;
 const common_1 = require("@nestjs/common");
 const comment_module_1 = require("../comment/comment.module");
+const email_module_1 = require("../email/email.module");
 const post_module_1 = require("../post/post.module");
 const reaction_module_1 = require("../reaction/reaction.module");
 const user_repository_1 = require("./repository/user.repository");
@@ -20,6 +21,7 @@ exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            email_module_1.EmailModule,
             (0, common_1.forwardRef)(() => post_module_1.PostModule),
             (0, common_1.forwardRef)(() => comment_module_1.CommentModule),
             (0, common_1.forwardRef)(() => reaction_module_1.ReactionModule),

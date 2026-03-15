@@ -25,6 +25,9 @@ let UserController = class UserController {
     getUser(id) {
         return this.userService.getUser(id);
     }
+    sendVerificationEmail(req) {
+        return this.userService.sendVerificationEmail(req.user.uid);
+    }
     updateUser(req, updateUserDto) {
         return this.userService.updateUser(req.user.uid, updateUserDto);
     }
@@ -40,6 +43,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UserController.prototype, "getUser", null);
+__decorate([
+    (0, common_1.Post)('send-verification-email'),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], UserController.prototype, "sendVerificationEmail", null);
 __decorate([
     (0, common_1.Patch)(''),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),

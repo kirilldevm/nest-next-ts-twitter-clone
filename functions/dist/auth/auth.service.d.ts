@@ -27,6 +27,9 @@ export declare class AuthService {
         message: string;
         user: User;
     }>;
+    resendVerificationEmail(dto: ForgotPasswordDto): Promise<{
+        ok: boolean;
+    }>;
     checkEmailForPasswordReset(dto: ForgotPasswordDto): Promise<{
         ok: boolean;
     }>;

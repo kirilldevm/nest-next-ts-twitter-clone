@@ -130,6 +130,14 @@ export class AuthService {
     }
   }
 
+  async resendVerificationEmail(email: string) {
+    const response = await api.post<{ ok: boolean }>(
+      ENDPOINTS.AUTH.RESEND_VERIFICATION_EMAIL,
+      { email },
+    );
+    return response.data;
+  }
+
   async checkEmailForPasswordReset(email: string) {
     try {
       const response = await api.post<{ ok: boolean }>(

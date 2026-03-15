@@ -9,8 +9,8 @@
   "scripts": {
     "build:watch": "tsc --watch",
     "build": "nest build",
-    "serve": "npm run build && cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase emulators:start --only functions",
-    "serve:watch": "concurrently \"npm run build:watch\" \"firebase emulators:start --only functions\"",
+    "serve": "npm run build && cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase emulators:start --only functions,firestore,auth,storage",
+    "serve:watch": "concurrently \"npm run build:watch\" \"firebase emulators:start --only functions,firestore,auth,storage\"",
     "shell": "npm run build && firebase functions:shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
@@ -24,7 +24,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e:run": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "firebase emulators:exec --only firestore,auth,storage,functions \"npm run test:e2e:run\""
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -54,7 +55,6 @@
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
-    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
     "concurrently": "^9.2.1",

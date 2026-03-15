@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,12 @@ export class UserController {
   @Get(':id')
   getUser(@Param('id') id: string) {
     return this.userService.getUser(id);
+  }
+
+  @Post('send-verification-email')
+  @UseGuards(AuthGuard)
+  sendVerificationEmail(@Req() req: ReqUser) {
+    return this.userService.sendVerificationEmail(req.user.uid);
   }
 
   @Patch('')

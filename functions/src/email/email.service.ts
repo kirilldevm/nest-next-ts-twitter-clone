@@ -17,12 +17,6 @@ export class EmailService {
       .auth()
       .generateEmailVerificationLink(email);
 
-    const verifyUrl = new URL(verificationLink);
-    const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
-    const frontendUrl = corsOrigin.split(',')[0].trim();
-    const oobCode = verifyUrl.searchParams.get('oobCode');
-    const verifyLink = `${frontendUrl}/verify-email?oobCode=${oobCode}`;
-
     // Use onboarding@resend.dev for testing (no domain verification needed)
     const from = process.env.RESEND_FROM || 'onboarding@resend.dev';
     const { error } = await this.getResend().emails.send({
@@ -31,7 +25,7 @@ export class EmailService {
       subject: 'Verify your email',
       html: `<div>
         <h1>Verify your email</h1>
-        <p>Click <a href="${verifyLink}">here</a> to verify your email</p>
+        <p>Click <a href="${verificationLink}">here</a> to verify your email</p>
       </div>`,
     });
 

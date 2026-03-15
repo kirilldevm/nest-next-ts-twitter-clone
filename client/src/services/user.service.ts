@@ -18,6 +18,24 @@ export class UserService {
       throw error;
     }
   }
+
+  async sendVerificationEmail(): Promise<
+    | {
+        success: boolean;
+        message: string;
+      }
+    | Error
+  > {
+    try {
+      const response = await api.post(ENDPOINTS.USER.SEND_VERIFICATION_EMAIL);
+      return response.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.data?.message) {
+        throw new Error(String(error.response.data.message));
+      }
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

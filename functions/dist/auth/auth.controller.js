@@ -35,6 +35,9 @@ let AuthController = class AuthController {
     forgotPassword(dto) {
         return this.authService.checkEmailForPasswordReset(dto);
     }
+    resendVerificationEmail(dto) {
+        return this.authService.resendVerificationEmail(dto);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -65,6 +68,13 @@ __decorate([
     __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)('resend-verification-email'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "resendVerificationEmail", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

@@ -45,6 +45,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
+const email_service_1 = require("../email/email.service");
 const comment_repository_1 = require("../comment/repository/comment.repository");
 const post_repository_1 = require("../post/repository/post.repository");
 const reaction_entity_1 = require("../reaction/entity/reaction.entity");
@@ -57,15 +58,31 @@ let UserService = class UserService {
     commentRepository;
     reactionRepository;
     storageService;
-    constructor(userRepository, postRepository, commentRepository, reactionRepository, storageService) {
+    emailService;
+    constructor(userRepository, postRepository, commentRepository, reactionRepository, storageService, emailService) {
         this.userRepository = userRepository;
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.reactionRepository = reactionRepository;
         this.storageService = storageService;
+        this.emailService = emailService;
     }
     async getUser(id) {
         return this.userRepository.getUser(id);
+    }
+    async sendVerificationEmail(uid) {
+        const user = await this.userRepository.getUser(uid);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (user.emailVerified) {
+            throw new common_1.BadRequestException('Email already verified');
+        }
+        await this.emailService.sendVerificationLink(user.email);
+        return {
+            success: true,
+            message: 'Verification email sent',
+        };
     }
     async deleteUser(uid) {
         const photoUrlsToDelete = [];
@@ -134,6 +151,7 @@ exports.UserService = UserService = __decorate([
         post_repository_1.PostRepository,
         comment_repository_1.CommentRepository,
         reaction_repository_1.ReactionRepository,
-        storage_service_1.StorageService])
+        storage_service_1.StorageService,
+        email_service_1.EmailService])
 ], UserService);
 //# sourceMappingURL=user.service.js.map

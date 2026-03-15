@@ -2,7 +2,10 @@
 
 import Link from '@/components/link';
 import ContinueWithGoogleButton from '@/components/ui/continue-with-google-button';
-import { useSigninMutation } from '@/hooks/auth.hook';
+import {
+  useResendVerificationEmailMutation,
+  useSigninMutation,
+} from '@/hooks/auth.hook';
 import { type SigninInput, signinSchema } from '@/schemas/auth.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
@@ -16,7 +19,11 @@ import { useForm } from 'react-hook-form';
 
 export default function LoginForm() {
   const { mutate: signin, isPending: isSigningIn } = useSigninMutation();
+  const { mutate: resendVerification, isPending: isResending } =
+    useResendVerificationEmailMutation();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const {
     register,
@@ -32,12 +39,39 @@ export default function LoginForm() {
 
   const onSubmit = (data: SigninInput) => {
     setErrorMessage(null);
+    setUnverifiedEmail(null);
+    setResendSuccess(false);
 
     signin(data, {
-      onError: (error) => {
+      onError: (error, variables) => {
         const message =
           error instanceof Error ? error.message : 'An unknown error occurred';
         setErrorMessage(message);
+        if (
+          message.toLowerCase().includes('verify your email') &&
+          variables?.email
+        ) {
+          setUnverifiedEmail(variables.email);
+        } else {
+          setUnverifiedEmail(null);
+        }
+      },
+    });
+  };
+
+  const handleResendVerification = () => {
+    if (!unverifiedEmail) return;
+    setResendSuccess(false);
+    setErrorMessage(null);
+    resendVerification(unverifiedEmail, {
+      onSuccess: () => {
+        setResendSuccess(true);
+        setErrorMessage(null);
+      },
+      onError: (error) => {
+        setErrorMessage(
+          error instanceof Error ? error.message : 'Failed to resend email',
+        );
       },
     });
   };
@@ -120,6 +154,24 @@ export default function LoginForm() {
           <Alert severity='error'>
             {errorMessage.charAt(0).toUpperCase() +
               errorMessage.slice(1).toLowerCase()}
+            {unverifiedEmail && (
+              <Box component='span' sx={{ display: 'block', mt: 1 }}>
+                <Button
+                  size='small'
+                  variant='text'
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  sx={{ textTransform: 'none', px: 0, minWidth: 0 }}
+                >
+                  {isResending ? 'Sending...' : 'Resend verification email'}
+                </Button>
+              </Box>
+            )}
+          </Alert>
+        )}
+        {resendSuccess && (
+          <Alert severity='success'>
+            Verification email sent. Please check your inbox.
           </Alert>
         )}
 
