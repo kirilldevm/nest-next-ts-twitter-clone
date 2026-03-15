@@ -69,20 +69,12 @@ export class PostService {
       throw new BadRequestException('Search query is required');
     }
 
-    try {
-      const result = await this.algoliaService.searchPosts(trimmed, options);
-      const postIds = result.items
-        .map((p) => p.id)
-        .filter((id): id is string => !!id);
-      const postsFromFirestore = await Promise.all(
-        postIds.map((id) => this.postRepository.getPost(id)),
-      );
-      const posts = postsFromFirestore.filter((p): p is Post => p !== null);
-
+    const enrichWithAuthors = async (
+      posts: Post[],
+    ): Promise<SearchPostItem[]> => {
       const authorIds = [
         ...new Set(posts.map((p) => p.authorId).filter(Boolean)),
       ];
-
       const userMap = new Map<
         string,
         { displayName: string; photoURL: string | null }
@@ -91,6 +83,7 @@ export class PostService {
       await Promise.all(
         authorIds.map(async (id) => {
           const user = await this.userRepository.getUser(id);
+
           if (user) {
             const displayName =
               [user.firstName, user.lastName].filter(Boolean).join(' ') ||
@@ -104,25 +97,44 @@ export class PostService {
         }),
       );
 
-      const items: SearchPostItem[] = posts.map((post) => ({
+      return posts.map((post) => ({
         ...post,
         author: userMap.get(post.authorId),
       }));
+    };
+
+    try {
+      const result = await this.algoliaService.searchPosts(trimmed, options);
+
+      const postIds = result.items
+        .map((p) => p.id)
+        .filter((id): id is string => !!id);
+      const postsFromFirestore = await Promise.all(
+        postIds.map((id) => this.postRepository.getPost(id)),
+      );
+
+      const posts = postsFromFirestore.filter((p): p is Post => p !== null);
+      const items = await enrichWithAuthors(posts);
 
       return {
         items,
         nextPage: result.nextPage,
         totalHits: result.totalHits,
       };
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Search service unavailable';
-      if (message.includes('not configured')) {
-        throw new BadRequestException(
-          'Search is not configured. Set ALGOLIA_APP_ID and ALGOLIA_ADMIN_API_KEY.',
-        );
-      }
-      throw err;
+    } catch {
+      // Fallback: Firestore in-memory search (for dev/emulator when Algolia
+      // isn't available or index doesn't have emulator data)
+      const result = await this.postRepository.searchPostsByText(trimmed, {
+        limit: options?.limit ?? 10,
+        page: options?.page ?? 0,
+      });
+      const enriched = await enrichWithAuthors(result.items);
+
+      return {
+        items: enriched,
+        nextPage: result.nextPage,
+        totalHits: result.totalHits,
+      };
     }
   }
 

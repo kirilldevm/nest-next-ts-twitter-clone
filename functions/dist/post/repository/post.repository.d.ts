@@ -17,4 +17,12 @@ export declare class PostRepository {
         items: Post[];
         nextCursor: string | null;
     }>;
+    searchPostsByText(query: string, options?: {
+        limit?: number;
+        page?: number;
+    }): Promise<{
+        items: Post[];
+        nextPage: number | null;
+        totalHits: number;
+    }>;
 }

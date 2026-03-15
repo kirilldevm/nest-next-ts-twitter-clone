@@ -156,4 +156,37 @@ export class PostRepository {
 
     return { items, nextCursor };
   }
+
+  /**
+   * Simple text search fallback for dev/emulator when Algolia isn't available.
+   * Fetches posts and filters by title/text containing the query (case-insensitive).
+   * Not suitable for production with large datasets.
+   */
+  async searchPostsByText(
+    query: string,
+    options?: { limit?: number; page?: number },
+  ): Promise<{ items: Post[]; nextPage: number | null; totalHits: number }> {
+    const limit = Math.min(options?.limit ?? 50, 100);
+    const page = Math.max(0, options?.page ?? 0);
+    const snapshot = await this.postsDb
+      .orderBy('createdAt', 'desc')
+      .limit(200)
+      .get();
+    const items = snapshot.docs
+      .map((d) => this.mapDoc(d))
+      .filter((p): p is Post => p !== null);
+    const lower = query.toLowerCase().trim();
+    const filtered = items.filter((p) => {
+      const inTitle = (p.title ?? '').toLowerCase().includes(lower);
+      const inText = (p.text ?? '').toLowerCase().includes(lower);
+      return inTitle || inText;
+    });
+    const totalHits = filtered.length;
+    const start = page * limit;
+    const pageItems = filtered.slice(start, start + limit);
+    const nextPage =
+      start + limit < totalHits ? page + 1 : null;
+
+    return { items: pageItems, nextPage, totalHits };
+  }
 }

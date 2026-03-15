@@ -157,6 +157,28 @@ let PostRepository = class PostRepository {
         const nextCursor = hasMore ? snapshot.docs[limit - 1].id : null;
         return { items, nextCursor };
     }
+    async searchPostsByText(query, options) {
+        const limit = Math.min(options?.limit ?? 50, 100);
+        const page = Math.max(0, options?.page ?? 0);
+        const snapshot = await this.postsDb
+            .orderBy('createdAt', 'desc')
+            .limit(200)
+            .get();
+        const items = snapshot.docs
+            .map((d) => this.mapDoc(d))
+            .filter((p) => p !== null);
+        const lower = query.toLowerCase().trim();
+        const filtered = items.filter((p) => {
+            const inTitle = (p.title ?? '').toLowerCase().includes(lower);
+            const inText = (p.text ?? '').toLowerCase().includes(lower);
+            return inTitle || inText;
+        });
+        const totalHits = filtered.length;
+        const start = page * limit;
+        const pageItems = filtered.slice(start, start + limit);
+        const nextPage = start + limit < totalHits ? page + 1 : null;
+        return { items: pageItems, nextPage, totalHits };
+    }
 };
 exports.PostRepository = PostRepository;
 exports.PostRepository = PostRepository = __decorate([

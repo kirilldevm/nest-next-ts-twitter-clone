@@ -18,6 +18,7 @@ describe('PostService', () => {
   let listPostsMock: jest.Mock;
   let updatePostMock: jest.Mock;
   let deletePostMock: jest.Mock;
+  let searchPostsByTextMock: jest.Mock;
   let searchPostsMock: jest.Mock;
   let getUserMock: jest.Mock;
   let deleteFileByUrlMock: jest.Mock;
@@ -40,6 +41,7 @@ describe('PostService', () => {
     listPostsMock = jest.fn();
     updatePostMock = jest.fn();
     deletePostMock = jest.fn();
+    searchPostsByTextMock = jest.fn();
     searchPostsMock = jest.fn();
     getUserMock = jest.fn();
     deleteFileByUrlMock = jest.fn();
@@ -50,6 +52,7 @@ describe('PostService', () => {
       updatePost: updatePostMock,
       deletePost: deletePostMock,
       listPosts: listPostsMock,
+      searchPostsByText: searchPostsByTextMock,
     };
     const mockAlgoliaService = {
       searchPosts: searchPostsMock,
@@ -186,12 +189,32 @@ describe('PostService', () => {
       } as Partial<SearchPostItem>);
     });
 
-    it('should throw BadRequestException when Algolia not configured', async () => {
+    it('should fall back to Firestore when Algolia fails (e.g. not configured)', async () => {
       searchPostsMock.mockRejectedValue(new Error('Algolia is not configured'));
+      searchPostsByTextMock.mockResolvedValue({
+        items: [mockPost],
+        nextPage: null,
+        totalHits: 1,
+      });
+      getUserMock.mockResolvedValue({
+        id: 'user-1',
+        email: 'a@b.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        photoURL: null,
+      });
 
-      await expect(service.searchPosts('q')).rejects.toThrow(
-        BadRequestException,
-      );
+      const result = await service.searchPosts('q');
+
+      expect(searchPostsByTextMock).toHaveBeenCalledWith('q', {
+        limit: 10,
+        page: 0,
+      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]).toMatchObject({
+        id: 'post-1',
+        author: { displayName: 'John Doe', photoURL: null },
+      } as Partial<SearchPostItem>);
     });
   });
 
