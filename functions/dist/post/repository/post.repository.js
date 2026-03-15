@@ -115,9 +115,7 @@ let PostRepository = class PostRepository {
         }
     }
     async listPostIdsByAuthorId(authorId, transaction) {
-        const query = this.postsDb
-            .where('authorId', '==', authorId)
-            .limit(500);
+        const query = this.postsDb.where('authorId', '==', authorId).limit(500);
         const snapshot = transaction
             ? await transaction.get(query)
             : await query.get();

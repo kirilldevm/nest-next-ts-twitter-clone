@@ -106,9 +106,7 @@ export class PostRepository {
     authorId: string,
     transaction?: FirestoreTransaction,
   ): Promise<string[]> {
-    const query = this.postsDb
-      .where('authorId', '==', authorId)
-      .limit(500);
+    const query = this.postsDb.where('authorId', '==', authorId).limit(500);
     const snapshot = transaction
       ? await transaction.get(query)
       : await query.get();
@@ -184,8 +182,7 @@ export class PostRepository {
     const totalHits = filtered.length;
     const start = page * limit;
     const pageItems = filtered.slice(start, start + limit);
-    const nextPage =
-      start + limit < totalHits ? page + 1 : null;
+    const nextPage = start + limit < totalHits ? page + 1 : null;
 
     return { items: pageItems, nextPage, totalHits };
   }

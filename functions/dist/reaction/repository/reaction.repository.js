@@ -78,9 +78,7 @@ let ReactionRepository = class ReactionRepository {
         }
     }
     async listReactionIdsByUserId(userId, transaction) {
-        const query = this.reactionsDb
-            .where('userId', '==', userId)
-            .limit(500);
+        const query = this.reactionsDb.where('userId', '==', userId).limit(500);
         const snapshot = transaction
             ? await transaction.get(query)
             : await query.get();

@@ -99,6 +99,7 @@ let UserRepository = class UserRepository {
             throw new common_1.BadRequestException('Email is not verified');
         }
         const { id: _id, ...update } = data;
+        void _id;
         if (Object.keys(update).length > 0) {
             if (transaction) {
                 transaction.update(docRef, update);

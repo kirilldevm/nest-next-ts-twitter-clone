@@ -79,6 +79,7 @@ export class UserRepository {
     }
 
     const { id: _id, ...update } = data as Partial<User> & { id?: string };
+    void _id; // exclude id from Firestore update
     if (Object.keys(update).length > 0) {
       if (transaction) {
         transaction.update(docRef, update);

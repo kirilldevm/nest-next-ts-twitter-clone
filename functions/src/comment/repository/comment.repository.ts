@@ -140,9 +140,7 @@ export class CommentRepository {
     authorId: string,
     transaction?: FirestoreTransaction,
   ): Promise<string[]> {
-    const query = this.commentsDb
-      .where('authorId', '==', authorId)
-      .limit(500);
+    const query = this.commentsDb.where('authorId', '==', authorId).limit(500);
     const snapshot = transaction
       ? await transaction.get(query)
       : await query.get();
@@ -153,9 +151,7 @@ export class CommentRepository {
     postId: string,
     transaction?: FirestoreTransaction,
   ): Promise<string[]> {
-    const query = this.commentsDb
-      .where('postId', '==', postId)
-      .limit(500);
+    const query = this.commentsDb.where('postId', '==', postId).limit(500);
     const snapshot = transaction
       ? await transaction.get(query)
       : await query.get();

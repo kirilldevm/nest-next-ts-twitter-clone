@@ -44,8 +44,8 @@ describe('UserService', () => {
     mockDeleteUser.mockReset();
     mockUpdateUser.mockReset();
     mockRunTransaction.mockReset();
-    mockRunTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
-      cb({}),
+    mockRunTransaction.mockImplementation(
+      (cb: (tx: unknown) => Promise<unknown>) => cb({}),
     );
 
     getUserMock = jest.fn();
@@ -135,10 +135,9 @@ describe('UserService', () => {
         firstName: 'Jane',
       });
 
-      expect(updateUserRepoMock).toHaveBeenCalledWith(
-        'uid-123',
-        { firstName: 'Jane' },
-      );
+      expect(updateUserRepoMock).toHaveBeenCalledWith('uid-123', {
+        firstName: 'Jane',
+      });
       expect(mockUpdateUser).toHaveBeenCalledWith(
         'uid-123',
         expect.objectContaining({

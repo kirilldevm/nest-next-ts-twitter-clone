@@ -1,7 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { EmailService } from '../email/email.service';
 import { User } from '../user/entity/user.entity';
@@ -26,7 +23,6 @@ jest.mock('firebase-admin', () => ({
 
 describe('AuthService', () => {
   let service: AuthService;
-  let createUserMock: jest.Mock;
   let getUserMock: jest.Mock;
   let createUserRepoMock: jest.Mock;
   let sendVerificationLinkMock: jest.Mock;
@@ -57,7 +53,6 @@ describe('AuthService', () => {
     mockGetUser.mockReset();
     mockGetUserByEmail.mockReset();
 
-    createUserMock = jest.fn();
     getUserMock = jest.fn();
     createUserRepoMock = jest.fn();
     sendVerificationLinkMock = jest.fn();
@@ -117,7 +112,10 @@ describe('AuthService', () => {
     });
 
     it('should include photoURL when valid URL provided', async () => {
-      mockCreateUser.mockResolvedValue({ uid: 'uid-123', email: 'test@example.com' });
+      mockCreateUser.mockResolvedValue({
+        uid: 'uid-123',
+        email: 'test@example.com',
+      });
       createUserRepoMock.mockResolvedValue(mockUser);
       sendVerificationLinkMock.mockResolvedValue(undefined);
 

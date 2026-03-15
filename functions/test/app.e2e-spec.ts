@@ -1,5 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as admin from 'firebase-admin';
 import request from 'supertest';
@@ -135,9 +134,7 @@ describe('App (e2e)', () => {
     });
 
     it('GET /post returns list (public)', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/post')
-        .expect(200);
+      const res = await request(app.getHttpServer()).get('/post').expect(200);
 
       expect(res.body).toHaveProperty('items');
       expect(Array.isArray(res.body.items)).toBe(true);

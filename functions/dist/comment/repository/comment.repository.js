@@ -140,18 +140,14 @@ let CommentRepository = class CommentRepository {
         }
     }
     async listCommentIdsByAuthorId(authorId, transaction) {
-        const query = this.commentsDb
-            .where('authorId', '==', authorId)
-            .limit(500);
+        const query = this.commentsDb.where('authorId', '==', authorId).limit(500);
         const snapshot = transaction
             ? await transaction.get(query)
             : await query.get();
         return snapshot.docs.map((d) => d.id);
     }
     async listCommentIdsByPostId(postId, transaction) {
-        const query = this.commentsDb
-            .where('postId', '==', postId)
-            .limit(500);
+        const query = this.commentsDb.where('postId', '==', postId).limit(500);
         const snapshot = transaction
             ? await transaction.get(query)
             : await query.get();

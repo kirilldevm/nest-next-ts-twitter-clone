@@ -2,7 +2,7 @@
   "name": "nest-next-ts-twitter-clone",
   "private": true,
   "scripts": {
-    "deploy": "cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy",
+    "deploy": "npm run lint --prefix functions && cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy",
     "deploy:functions": "cross-env FUNCTIONS_DISCOVERY_TIMEOUT=30 firebase deploy --only functions",
     "deploy:hosting": "npm run build --prefix client && firebase deploy --only hosting"
   },

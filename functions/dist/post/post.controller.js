@@ -41,9 +41,7 @@ let PostController = class PostController {
         const limitNum = limit ? parseInt(limit, 10) : undefined;
         return this.postService.searchPosts(query ?? '', {
             page: Number.isNaN(pageNum) ? 0 : pageNum,
-            limit: limitNum !== undefined && Number.isNaN(limitNum)
-                ? undefined
-                : limitNum,
+            limit: limitNum !== undefined && Number.isNaN(limitNum) ? undefined : limitNum,
         });
     }
     getPost(id) {

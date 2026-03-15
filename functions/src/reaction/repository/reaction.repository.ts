@@ -63,9 +63,7 @@ export class ReactionRepository {
     userId: string,
     transaction?: FirestoreTransaction,
   ): Promise<string[]> {
-    const query = this.reactionsDb
-      .where('userId', '==', userId)
-      .limit(500);
+    const query = this.reactionsDb.where('userId', '==', userId).limit(500);
     const snapshot = transaction
       ? await transaction.get(query)
       : await query.get();
