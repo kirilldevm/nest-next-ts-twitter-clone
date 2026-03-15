@@ -42,8 +42,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StorageService = void 0;
 const common_1 = require("@nestjs/common");
 const admin = __importStar(require("firebase-admin"));
+const STORAGE_URL_PREFIXES = [
+    'https://firebasestorage.googleapis.com',
+    'http://127.0.0.1:9199',
+    'http://localhost:9199',
+];
 function getPathFromStorageUrl(url) {
-    if (!url || !url.startsWith('https://firebasestorage.googleapis.com')) {
+    if (!url || typeof url !== 'string' || !url.includes('/o/')) {
+        return null;
+    }
+    const isStorageUrl = STORAGE_URL_PREFIXES.some((p) => url.startsWith(p));
+    if (!isStorageUrl) {
         return null;
     }
     try {
@@ -60,20 +69,24 @@ function getPathFromStorageUrl(url) {
 let StorageService = class StorageService {
     async deleteFileByUrl(url) {
         const path = getPathFromStorageUrl(url);
-        if (!path)
+        if (!path) {
+            console.warn('StorageService.deleteFileByUrl: could not extract path from URL', {
+                url: url?.slice?.(0, 100),
+            });
             return;
+        }
         try {
             const app = admin.app();
             const bucketName = app.options.storageBucket ??
                 `${app.options.projectId ?? 'fir-twitter-clone-ec0b2'}.appspot.com`;
             const bucket = admin.storage().bucket(bucketName);
-            await bucket.file(path).delete();
+            await bucket.file(path).delete({ ignoreNotFound: true });
         }
         catch (err) {
             const code = err?.code;
             if (code === 404 || code === 5)
                 return;
-            console.warn('Failed to delete storage file:', path, err);
+            console.warn('StorageService.deleteFileByUrl failed:', { path, err });
         }
     }
 };
