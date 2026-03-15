@@ -1,7 +1,9 @@
 'use client';
 
+import { ENDPOINTS } from '@/config/endpoints.config';
 import { auth } from '@/config/firebase.config';
 import { type User } from '@/types';
+import api from '@/lib/api';
 import { signOut } from 'firebase/auth';
 import {
   createContext,
@@ -54,9 +56,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
 
       const userInfo = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
 
-      if (userInfo) {
-        setUser(JSON.parse(userInfo));
+      if (userInfo && token) {
+        try {
+          const user = JSON.parse(userInfo) as User;
+          await api.get(ENDPOINTS.USER.BY_ID(user.id));
+          setUser(user);
+        } catch {
+          await signOut(auth);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      } else {
+        if (userInfo || token) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+        setUser(null);
       }
 
       setLoading(false);
