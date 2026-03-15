@@ -45,6 +45,10 @@
         "destination": "/profile/__.html"
       },
       {
+        "source": "/settings",
+        "destination": "/settings.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

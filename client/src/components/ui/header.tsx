@@ -3,7 +3,6 @@
 import Link from '@/components/link';
 import { PAGES } from '@/config/pages.config';
 import { useAuth } from '@/context/auth.context';
-import MenuIcon from '@mui/icons-material/Menu';
 import { Skeleton, Stack } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -19,7 +18,6 @@ import { useRouter } from 'next/navigation';
 import { type MouseEvent, useState } from 'react';
 
 export default function Header() {
-  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
   const { user, loading, logout } = useAuth();
   const router = useRouter();
@@ -57,15 +55,8 @@ export default function Header() {
     },
   ];
 
-  const handleOpenNavMenu = (event: MouseEvent<HTMLElement>) => {
-    setAnchorElNav(event.currentTarget);
-  };
   const handleOpenUserMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseNavMenu = () => {
-    setAnchorElNav(null);
   };
 
   const handleCloseUserMenu = () => {
@@ -86,60 +77,27 @@ export default function Header() {
               justifyContent='space-between'
               width='100%'
             >
-              <Typography
-                variant='h6'
-                noWrap
-                onClick={() => router.push(user ? PAGES.FEED : '/')}
-                component='a'
-                sx={{
-                  display: { xs: 'none', md: 'flex' },
-                  fontFamily: 'monospace',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  letterSpacing: '.3rem',
-                  color: 'inherit',
+              <Link
+                href={PAGES.FEED}
+                style={{
                   textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'contents',
                 }}
               >
-                TwiXter
-              </Typography>
-
-              <Box
-                sx={{
-                  flexGrow: 0,
-                  display: { xs: 'flex', md: 'none' },
-                }}
-              >
-                <IconButton
-                  size='large'
-                  aria-label='account of current user'
-                  aria-controls='menu-appbar'
-                  aria-haspopup='true'
-                  onClick={handleOpenNavMenu}
-                  color='inherit'
+                <Typography
+                  variant='h6'
+                  noWrap
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    letterSpacing: '.3rem',
+                  }}
                 >
-                  <MenuIcon />
-                </IconButton>
-              </Box>
-              <Typography
-                variant='h5'
-                noWrap
-                onClick={() => router.push(user ? PAGES.FEED : '/')}
-                component='a'
-                sx={{
-                  display: { xs: 'flex', md: 'none' },
-                  flexGrow: 0,
-                  justifyContent: 'center',
-                  fontFamily: 'monospace',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  letterSpacing: '.3rem',
-                  color: 'inherit',
-                  textDecoration: 'none',
-                }}
-              >
-                TwiXter
-              </Typography>
+                  TwiXter
+                </Typography>
+              </Link>
 
               <Box sx={{ flexGrow: 0, marginLeft: 'auto' }}>
                 {!user && <Link href={PAGES.LOGIN}>Sign In / Sign Up</Link>}
