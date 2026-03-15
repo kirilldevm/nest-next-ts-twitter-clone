@@ -49,86 +49,138 @@ export class UserService {
   async deleteUser(uid: string) {
     const photoUrlsToDelete: string[] = [];
 
-    await admin.firestore().runTransaction(async (transaction) => {
-      const reactionIds = await this.reactionRepository.listReactionIdsByUserId(
-        uid,
-        transaction,
-      );
+    try {
+      await admin.firestore().runTransaction(async (transaction) => {
+        // --- PHASE 1: All reads first (Firestore requires reads before writes) ---
 
-      await this.reactionRepository.deleteReactionsByIds(
-        reactionIds,
-        transaction,
-      );
+        const reactionIds =
+          await this.reactionRepository.listReactionIdsByUserId(
+            uid,
+            transaction,
+          );
 
-      const postIds = await this.postRepository.listPostIdsByAuthorId(
-        uid,
-        transaction,
-      );
-      for (const postId of postIds) {
-        const post = await this.postRepository.getPost(postId, transaction);
-
-        if (post?.photoURL) photoUrlsToDelete.push(post.photoURL);
-
-        const commentIds = await this.commentRepository.listCommentIdsByPostId(
-          postId,
+        const postIds = await this.postRepository.listPostIdsByAuthorId(
+          uid,
           transaction,
         );
-        for (const commentId of commentIds) {
-          const commentReactionIds =
+
+        const postData: Array<{
+          postId: string;
+          commentIds: string[];
+          commentReactionIds: Record<string, string[]>;
+          postReactionIds: string[];
+        }> = [];
+
+        for (const postId of postIds) {
+          const post = await this.postRepository.getPost(postId, transaction);
+
+          if (post?.photoURL) photoUrlsToDelete.push(post.photoURL);
+
+          const commentIds =
+            await this.commentRepository.listCommentIdsByPostId(
+              postId,
+              transaction,
+            );
+
+          const commentReactionIds: Record<string, string[]> = {};
+          for (const commentId of commentIds) {
+            commentReactionIds[commentId] =
+              await this.reactionRepository.listReactionIdsByTarget(
+                ReactionTargetType.COMMENT,
+                commentId,
+                transaction,
+              );
+          }
+          const postReactionIds =
+            await this.reactionRepository.listReactionIdsByTarget(
+              ReactionTargetType.POST,
+              postId,
+              transaction,
+            );
+          postData.push({
+            postId,
+            commentIds,
+            commentReactionIds,
+            postReactionIds,
+          });
+        }
+
+        const userCommentIds =
+          await this.commentRepository.listCommentIdsByAuthorId(
+            uid,
+            transaction,
+          );
+        const allPostCommentIds = new Set(
+          postData.flatMap((p) => p.commentIds),
+        );
+        const userCommentsOnOthersPosts = userCommentIds.filter(
+          (id) => !allPostCommentIds.has(id),
+        );
+        const userCommentReactionIds: Record<string, string[]> = {};
+        for (const commentId of userCommentsOnOthersPosts) {
+          userCommentReactionIds[commentId] =
             await this.reactionRepository.listReactionIdsByTarget(
               ReactionTargetType.COMMENT,
               commentId,
               transaction,
             );
+        }
 
+        // --- PHASE 2: All writes ---
+
+        await this.reactionRepository.deleteReactionsByIds(
+          reactionIds,
+          transaction,
+        );
+
+        for (const {
+          postId,
+          commentIds,
+          commentReactionIds,
+          postReactionIds,
+        } of postData) {
+          for (const commentId of commentIds) {
+            await this.reactionRepository.deleteReactionsByIds(
+              commentReactionIds[commentId] ?? [],
+              transaction,
+            );
+            await this.commentRepository.deleteComment(commentId, transaction);
+          }
           await this.reactionRepository.deleteReactionsByIds(
-            commentReactionIds,
+            postReactionIds,
             transaction,
           );
+          await this.postRepository.deletePost(postId, transaction);
+        }
 
+        for (const commentId of userCommentsOnOthersPosts) {
+          await this.reactionRepository.deleteReactionsByIds(
+            userCommentReactionIds[commentId] ?? [],
+            transaction,
+          );
           await this.commentRepository.deleteComment(commentId, transaction);
         }
-        const postReactionIds =
-          await this.reactionRepository.listReactionIdsByTarget(
-            ReactionTargetType.POST,
-            postId,
-            transaction,
-          );
 
-        await this.reactionRepository.deleteReactionsByIds(
-          postReactionIds,
-          transaction,
-        );
-        await this.postRepository.deletePost(postId, transaction);
+        await this.userRepository.deleteUser(uid, transaction);
+      });
+
+      for (const url of photoUrlsToDelete) {
+        await this.storageService.deleteFileByUrl(url);
       }
 
-      const userCommentIds =
-        await this.commentRepository.listCommentIdsByAuthorId(uid, transaction);
-
-      for (const commentId of userCommentIds) {
-        const commentReactionIds =
-          await this.reactionRepository.listReactionIdsByTarget(
-            ReactionTargetType.COMMENT,
-            commentId,
-            transaction,
-          );
-
-        await this.reactionRepository.deleteReactionsByIds(
-          commentReactionIds,
-          transaction,
-        );
-
-        await this.commentRepository.deleteComment(commentId, transaction);
+      try {
+        await admin.auth().deleteUser(uid);
+      } catch (authErr: unknown) {
+        const code = (authErr as { code?: string })?.code;
+        if (code === 'auth/user-not-found') {
+          return;
+        }
+        throw authErr;
       }
-
-      await this.userRepository.deleteUser(uid, transaction);
-    });
-
-    for (const url of photoUrlsToDelete) {
-      await this.storageService.deleteFileByUrl(url);
+    } catch (err) {
+      console.error('deleteUser failed:', { uid, err });
+      throw err;
     }
-
-    await admin.auth().deleteUser(uid);
   }
 
   async updateUser(uid: string, updateUserDto: UpdateUserDto) {
