@@ -70,6 +70,37 @@ export class ReactionRepository {
     return snapshot.docs.map((d) => d.id);
   }
 
+  async listReactionsByUserId(
+    userId: string,
+    transaction?: FirestoreTransaction,
+  ): Promise<
+    Array<{
+      id: string;
+      targetType: ReactionTargetType;
+      targetId: string;
+      type: ReactionType;
+    }>
+  > {
+    const query = this.reactionsDb.where('userId', '==', userId).limit(500);
+
+    const snapshot = transaction
+      ? await transaction.get(query)
+      : await query.get();
+
+    return snapshot.docs
+      .map((d) => {
+        const data = d.data();
+        if (!data?.targetType || !data?.targetId || !data?.type) return null;
+        return {
+          id: d.id,
+          targetType: data.targetType as ReactionTargetType,
+          targetId: data.targetId as string,
+          type: data.type as ReactionType,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+  }
+
   async deleteReactionsByIds(
     ids: string[],
     transaction?: FirestoreTransaction,

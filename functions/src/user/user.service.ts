@@ -7,7 +7,10 @@ import * as admin from 'firebase-admin';
 import { EmailService } from 'src/email/email.service';
 import { CommentRepository } from '../comment/repository/comment.repository';
 import { PostRepository } from '../post/repository/post.repository';
-import { ReactionTargetType } from '../reaction/entity/reaction.entity';
+import {
+  ReactionTargetType,
+  ReactionType,
+} from '../reaction/entity/reaction.entity';
 import { ReactionRepository } from '../reaction/repository/reaction.repository';
 import { StorageService } from '../storage/storage.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -53,11 +56,8 @@ export class UserService {
       await admin.firestore().runTransaction(async (transaction) => {
         // --- PHASE 1: All reads first (Firestore requires reads before writes) ---
 
-        const reactionIds =
-          await this.reactionRepository.listReactionIdsByUserId(
-            uid,
-            transaction,
-          );
+        const userReactions =
+          await this.reactionRepository.listReactionsByUserId(uid, transaction);
 
         const postIds = await this.postRepository.listPostIdsByAuthorId(
           uid,
@@ -91,6 +91,7 @@ export class UserService {
                 transaction,
               );
           }
+
           const postReactionIds =
             await this.reactionRepository.listReactionIdsByTarget(
               ReactionTargetType.POST,
@@ -116,6 +117,7 @@ export class UserService {
         const userCommentsOnOthersPosts = userCommentIds.filter(
           (id) => !allPostCommentIds.has(id),
         );
+
         const userCommentReactionIds: Record<string, string[]> = {};
         for (const commentId of userCommentsOnOthersPosts) {
           userCommentReactionIds[commentId] =
@@ -126,10 +128,67 @@ export class UserService {
             );
         }
 
+        const userCommentsOnOthersPostIds: Record<string, number> = {};
+        for (const commentId of userCommentsOnOthersPosts) {
+          const comment = await this.commentRepository.getComment(
+            commentId,
+            transaction,
+          );
+          if (comment?.postId) {
+            userCommentsOnOthersPostIds[comment.postId] =
+              (userCommentsOnOthersPostIds[comment.postId] ?? 0) + 1;
+          }
+        }
+
+        const userPostIdsSet = new Set(postIds);
+        const commentsBeingDeleted = new Set([
+          ...allPostCommentIds,
+          ...userCommentsOnOthersPosts,
+        ]);
+
         // --- PHASE 2: All writes ---
 
+        // Decrease counts on posts/comments that are NOT being deleted
+        for (const r of userReactions) {
+          if (r.targetType === ReactionTargetType.POST) {
+            if (!userPostIdsSet.has(r.targetId)) {
+              const delta =
+                r.type === ReactionType.LIKE
+                  ? { likesDelta: -1 }
+                  : { dislikesDelta: -1 };
+              await this.postRepository.incrementPostCounts(
+                r.targetId,
+                delta,
+                transaction,
+              );
+            }
+          } else if (r.targetType === ReactionTargetType.COMMENT) {
+            if (!commentsBeingDeleted.has(r.targetId)) {
+              const delta =
+                r.type === ReactionType.LIKE
+                  ? { likesDelta: -1 }
+                  : { dislikesDelta: -1 };
+              await this.commentRepository.incrementCommentCounts(
+                r.targetId,
+                delta,
+                transaction,
+              );
+            }
+          }
+        }
+
+        for (const [postId, count] of Object.entries(
+          userCommentsOnOthersPostIds,
+        )) {
+          await this.postRepository.incrementPostCounts(
+            postId,
+            { commentsDelta: -count },
+            transaction,
+          );
+        }
+
         await this.reactionRepository.deleteReactionsByIds(
-          reactionIds,
+          userReactions.map((r) => r.id),
           transaction,
         );
 

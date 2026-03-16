@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { Post } from '../entity/post.entity';
+import { FieldValue } from 'firebase-admin/firestore';
 import { FirestoreTransaction } from 'src/types';
+import { Post } from '../entity/post.entity';
 
 const LIMIT_MAX = 50;
 const LIMIT_DEFAULT = 10;
@@ -12,7 +13,9 @@ export class PostRepository {
 
   private mapDoc(doc: admin.firestore.DocumentSnapshot): Post | null {
     if (!doc.exists) return null;
+
     const data = doc.data() as Post;
+
     if (!data) return null;
 
     return {
@@ -38,9 +41,11 @@ export class PostRepository {
     transaction?: FirestoreTransaction,
   ): Promise<Post | null> {
     const docRef = this.postsDb.doc(id);
+
     const doc = transaction
       ? await transaction.get(docRef)
       : await docRef.get();
+
     return this.mapDoc(doc);
   }
 
@@ -80,7 +85,9 @@ export class PostRepository {
         transaction.update(docRef, update);
       } else {
         const doc = await docRef.get();
+
         if (!doc.exists) return null;
+
         await docRef.update(update);
       }
     }
@@ -90,11 +97,42 @@ export class PostRepository {
     return this.getPost(id);
   }
 
+  async incrementPostCounts(
+    id: string,
+    deltas: {
+      likesDelta?: number;
+      dislikesDelta?: number;
+      commentsDelta?: number;
+    },
+    transaction?: FirestoreTransaction,
+  ): Promise<void> {
+    const docRef = this.postsDb.doc(id);
+    const update: Record<string, FieldValue> = {};
+
+    if (deltas.likesDelta !== undefined)
+      update.likesCount = FieldValue.increment(deltas.likesDelta);
+
+    if (deltas.dislikesDelta !== undefined)
+      update.dislikesCount = FieldValue.increment(deltas.dislikesDelta);
+
+    if (deltas.commentsDelta !== undefined)
+      update.commentsCount = FieldValue.increment(deltas.commentsDelta);
+
+    if (Object.keys(update).length === 0) return;
+
+    if (transaction) {
+      transaction.update(docRef, update);
+    } else {
+      await docRef.update(update);
+    }
+  }
+
   async deletePost(
     id: string,
     transaction?: FirestoreTransaction,
   ): Promise<void> {
     const docRef = this.postsDb.doc(id);
+
     if (transaction) {
       transaction.delete(docRef);
     } else {
@@ -110,6 +148,7 @@ export class PostRepository {
     const snapshot = transaction
       ? await transaction.get(query)
       : await query.get();
+
     return snapshot.docs.map((d) => d.id);
   }
 
@@ -149,6 +188,7 @@ export class PostRepository {
       .slice(0, limit)
       .map((d) => this.mapDoc(d))
       .filter((p): p is Post => p !== null);
+
     const hasMore = snapshot.docs.length > limit;
     const nextCursor = hasMore ? snapshot.docs[limit - 1].id : null;
 
@@ -166,19 +206,23 @@ export class PostRepository {
   ): Promise<{ items: Post[]; nextPage: number | null; totalHits: number }> {
     const limit = Math.min(options?.limit ?? 50, 100);
     const page = Math.max(0, options?.page ?? 0);
+
     const snapshot = await this.postsDb
       .orderBy('createdAt', 'desc')
       .limit(200)
       .get();
+
     const items = snapshot.docs
       .map((d) => this.mapDoc(d))
       .filter((p): p is Post => p !== null);
+
     const lower = query.toLowerCase().trim();
     const filtered = items.filter((p) => {
       const inTitle = (p.title ?? '').toLowerCase().includes(lower);
       const inText = (p.text ?? '').toLowerCase().includes(lower);
       return inTitle || inText;
     });
+
     const totalHits = filtered.length;
     const start = page * limit;
     const pageItems = filtered.slice(start, start + limit);

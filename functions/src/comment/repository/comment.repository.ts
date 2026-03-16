@@ -124,6 +124,23 @@ export class CommentRepository {
     }
   }
 
+  async incrementCommentCounts(
+    id: string,
+    deltas: { likesDelta?: number; dislikesDelta?: number },
+    transaction?: FirestoreTransaction,
+  ): Promise<void> {
+    const docRef = this.commentsDb.doc(id);
+    const update: Record<string, FieldValue> = {};
+    if (deltas.likesDelta !== undefined) update.likesCount = FieldValue.increment(deltas.likesDelta);
+    if (deltas.dislikesDelta !== undefined) update.dislikesCount = FieldValue.increment(deltas.dislikesDelta);
+    if (Object.keys(update).length === 0) return;
+    if (transaction) {
+      transaction.update(docRef, update);
+    } else {
+      await docRef.update(update);
+    }
+  }
+
   async deleteComment(
     id: string,
     transaction?: FirestoreTransaction,
