@@ -98,6 +98,7 @@ export class UserService {
               postId,
               transaction,
             );
+
           postData.push({
             postId,
             commentIds,

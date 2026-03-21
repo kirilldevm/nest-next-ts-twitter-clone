@@ -31,8 +31,8 @@ export default function ReactionButtons({
   const { mutate: setReaction, isPending } = useSetReactionMutation();
 
   const accumulatedCount = useMemo(
-    () => (likesCount ?? 0) - (dislikesCount ?? 0),
-    [likesCount, dislikesCount],
+    () => (likesCount ?? 0),
+    [likesCount],
   );
 
   return (
