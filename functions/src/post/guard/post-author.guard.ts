@@ -6,33 +6,33 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { CommentRepository } from '../repository/comment.repository';
+import { PostRepository } from '../repository/post.repository';
 
 @Injectable()
-export class CommentAuthorGuard implements CanActivate {
-  constructor(private readonly commentRepository: CommentRepository) {}
+export class PostAuthorGuard implements CanActivate {
+  constructor(private readonly postRepository: PostRepository) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()
       .getRequest<Request & { params: { id: string } }>();
 
-    const commentId = request.params?.id;
+    const postId = request.params?.id;
     const userId = request.user?.uid;
 
-    if (!commentId || !userId) {
+    if (!postId || !userId) {
       throw new ForbiddenException('Access denied');
     }
 
-    const comment = await this.commentRepository.getComment(commentId);
+    const post = await this.postRepository.getPost(postId);
 
-    if (!comment) {
-      throw new NotFoundException('Comment not found');
+    if (!post) {
+      throw new NotFoundException('Post not found');
     }
 
-    if (comment.authorId !== userId) {
+    if (post.authorId !== userId) {
       throw new ForbiddenException(
-        'You can only update or delete your own comments',
+        'You can only update or delete your own posts',
       );
     }
 

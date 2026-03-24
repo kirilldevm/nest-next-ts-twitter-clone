@@ -9,7 +9,9 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard, type ReqUser } from 'src/auth/guard/auth.guard';
+import { type Request } from 'express';
+import { AuthGuard } from 'src/auth/guard/auth.guard';
+import { VerifiedEmailGuard } from 'src/auth/guard/verified-email.guard';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -24,19 +26,19 @@ export class UserController {
 
   @Post('send-verification-email')
   @UseGuards(AuthGuard)
-  sendVerificationEmail(@Req() req: ReqUser) {
-    return this.userService.sendVerificationEmail(req.user.uid);
+  sendVerificationEmail(@Req() req: Request) {
+    return this.userService.sendVerificationEmail(req.user!.uid);
   }
 
   @Patch('')
-  @UseGuards(AuthGuard)
-  updateUser(@Req() req: ReqUser, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.updateUser(req.user.uid, updateUserDto);
+  @UseGuards(AuthGuard, VerifiedEmailGuard)
+  updateUser(@Req() req: Request, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.updateUser(req.user!.uid, updateUserDto);
   }
 
   @Delete('')
-  @UseGuards(AuthGuard)
-  deleteUser(@Req() req: ReqUser) {
-    return this.userService.deleteUser(req.user.uid);
+  @UseGuards(AuthGuard, VerifiedEmailGuard)
+  deleteUser(@Req() req: Request) {
+    return this.userService.deleteUser(req.user!.uid);
   }
 }

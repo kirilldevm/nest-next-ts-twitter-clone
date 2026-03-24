@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AlgoliaService } from '../algolia/algolia.service';
 import { StorageService } from '../storage/storage.service';
@@ -223,24 +219,16 @@ describe('PostService', () => {
       getPostMock.mockResolvedValue(null);
 
       await expect(
-        service.updatePost('missing', 'user-1', { title: 'New' }),
+        service.updatePost('missing', { title: 'New' }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException when user is not author', async () => {
-      getPostMock.mockResolvedValue(mockPost);
-
-      await expect(
-        service.updatePost('post-1', 'other-user', { title: 'New' }),
-      ).rejects.toThrow(ForbiddenException);
-    });
-
-    it('should update post when user is author', async () => {
+    it('should update post', async () => {
       const updated = { ...mockPost, title: 'Updated' };
       getPostMock.mockResolvedValue(mockPost);
       updatePostMock.mockResolvedValue(updated);
 
-      const result = await service.updatePost('post-1', 'user-1', {
+      const result = await service.updatePost('post-1', {
         title: 'Updated',
       });
 
@@ -255,20 +243,12 @@ describe('PostService', () => {
     it('should throw NotFoundException when post not found', async () => {
       getPostMock.mockResolvedValue(null);
 
-      await expect(service.deletePost('missing', 'user-1')).rejects.toThrow(
+      await expect(service.deletePost('missing')).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('should throw ForbiddenException when user is not author', async () => {
-      getPostMock.mockResolvedValue(mockPost);
-
-      await expect(service.deletePost('post-1', 'other-user')).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
-
-    it('should delete post and remove photo when user is author', async () => {
+    it('should delete post and remove photo', async () => {
       const postWithPhoto = {
         ...mockPost,
         photoURL: 'https://example.com/img.png',
@@ -277,7 +257,7 @@ describe('PostService', () => {
       deletePostMock.mockResolvedValue(undefined);
       deleteFileByUrlMock.mockResolvedValue(undefined);
 
-      await service.deletePost('post-1', 'user-1');
+      await service.deletePost('post-1');
 
       expect(deleteFileByUrlMock).toHaveBeenCalledWith(
         'https://example.com/img.png',

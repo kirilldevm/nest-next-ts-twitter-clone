@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
@@ -7,7 +8,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-export class CreateUserDto {
+export class SignUpDto {
   @IsEmail()
   @IsNotEmpty()
   email!: string;
@@ -27,5 +28,6 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsUrl({}, { message: 'Profile image must be a valid URL' })
-  profileImageUrl?: string | null;
+  @Transform(({ value }: { value: string | null }) => value?.trim() ?? null)
+  profileImageUrl!: string | null;
 }

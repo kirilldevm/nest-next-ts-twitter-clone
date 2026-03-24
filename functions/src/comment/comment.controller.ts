@@ -10,28 +10,30 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard, type ReqUser } from '../auth/guard/auth.guard';
-import { CommentAuthorGuard } from './guard/comment-author.guard';
+import { type Request } from 'express';
+import { AuthGuard } from '../auth/guard/auth.guard';
+import { VerifiedEmailGuard } from '../auth/guard/verified-email.guard';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { CommentAuthorGuard } from './guard/comment-author.guard';
 
 @Controller('comment')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, VerifiedEmailGuard)
   createComment(
-    @Req() req: ReqUser,
+    @Req() req: Request,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    const displayName =
-      req.user.displayName || req.user.email?.split('@')[0] || 'Anonymous';
+    const user = req.user!;
+    const displayName = user.name || user.email?.split('@')[0] || 'Anonymous';
     return this.commentService.createComment(
-      req.user.uid,
+      user.uid,
       displayName,
-      req.user.photoURL ?? null,
+      user.picture ?? null,
       createCommentDto,
     );
   }
@@ -60,7 +62,7 @@ export class CommentController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard, CommentAuthorGuard)
+  @UseGuards(AuthGuard, VerifiedEmailGuard, CommentAuthorGuard)
   updateComment(
     @Param('id') id: string,
     @Body() updateCommentDto: UpdateCommentDto,
@@ -69,7 +71,7 @@ export class CommentController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard, CommentAuthorGuard)
+  @UseGuards(AuthGuard, VerifiedEmailGuard, CommentAuthorGuard)
   deleteComment(@Param('id') id: string) {
     return this.commentService.deleteComment(id);
   }

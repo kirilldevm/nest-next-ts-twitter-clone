@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -138,15 +137,11 @@ export class PostService {
     }
   }
 
-  async updatePost(postId: string, userId: string, dto: UpdatePostDto) {
+  async updatePost(postId: string, dto: UpdatePostDto) {
     const post = await this.postRepository.getPost(postId);
 
     if (!post) {
       throw new NotFoundException('Post not found');
-    }
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only edit your own posts');
     }
 
     const { title, text, photoURL } = dto;
@@ -165,15 +160,11 @@ export class PostService {
     return this.postRepository.updatePost(postId, update);
   }
 
-  async deletePost(postId: string, userId: string) {
+  async deletePost(postId: string) {
     const post = await this.postRepository.getPost(postId);
 
     if (!post) {
       throw new NotFoundException('Post not found');
-    }
-
-    if (post.authorId !== userId) {
-      throw new ForbiddenException('You can only delete your own posts');
     }
 
     if (post.photoURL) {

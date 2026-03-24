@@ -2,10 +2,10 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { Comment } from 'src/comment/entity/comment.entity';
 import { Post } from 'src/post/entity/post.entity';
-import { SetReactionResult } from 'src/types/reaction.type';
 import { CommentRepository } from '../comment/repository/comment.repository';
 import { PostRepository } from '../post/repository/post.repository';
 import { ReactionTargetType, ReactionType } from './entity/reaction.entity';
+import { SetReactionResult } from './reaction.module';
 import { ReactionRepository } from './repository/reaction.repository';
 
 @Injectable()
@@ -114,8 +114,6 @@ export class ReactionService {
         dislikesCount: newDislikesCount,
       };
     });
-
-    // throw new BadRequestException('Unsupported target type');
   }
 
   async getReaction(

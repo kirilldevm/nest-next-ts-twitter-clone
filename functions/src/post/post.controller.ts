@@ -10,9 +10,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard, type ReqUser } from '../auth/guard/auth.guard';
+import { type Request } from 'express';
+import { AuthGuard } from '../auth/guard/auth.guard';
+import { VerifiedEmailGuard } from '../auth/guard/verified-email.guard';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { PostAuthorGuard } from './guard/post-author.guard';
 import { PostService } from './post.service';
 
 @Controller('post')
@@ -20,9 +23,9 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
-  createPost(@Req() req: ReqUser, @Body() createPostDto: CreatePostDto) {
-    return this.postService.createPost(req.user.uid, createPostDto);
+  @UseGuards(AuthGuard, VerifiedEmailGuard)
+  createPost(@Req() req: Request, @Body() createPostDto: CreatePostDto) {
+    return this.postService.createPost(req.user!.uid, createPostDto);
   }
 
   @Get()
@@ -64,18 +67,14 @@ export class PostController {
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
-  updatePost(
-    @Param('id') id: string,
-    @Req() req: ReqUser,
-    @Body() updatePostDto: UpdatePostDto,
-  ) {
-    return this.postService.updatePost(id, req.user.uid, updatePostDto);
+  @UseGuards(AuthGuard, VerifiedEmailGuard, PostAuthorGuard)
+  updatePost(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
+    return this.postService.updatePost(id, updatePostDto);
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard)
-  deletePost(@Param('id') id: string, @Req() req: ReqUser) {
-    return this.postService.deletePost(id, req.user.uid);
+  @UseGuards(AuthGuard, VerifiedEmailGuard, PostAuthorGuard)
+  deletePost(@Param('id') id: string) {
+    return this.postService.deletePost(id);
   }
 }

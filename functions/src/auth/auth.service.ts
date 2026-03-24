@@ -1,16 +1,15 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { getErrorMessage, isFirebaseAuthError } from 'src/common/error.utils';
+import {
+  getErrorMessage,
+  handleFirebaseAuthError,
+} from 'src/common/error.utils';
 import { EmailService } from 'src/email/email.service';
 import { User } from 'src/user/entity/user.entity';
 import { UserRepository } from 'src/user/repository/user.repository';
-import { CreateUserDto } from './dto/create-user.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { SigninDto } from './dto/signin.dto';
+import { SignUpDto } from './dto/signup.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,44 +18,19 @@ export class AuthService {
     private readonly emailService: EmailService,
   ) {}
 
-  async signup(createUserDto: CreateUserDto) {
-    const { email, password, firstName, lastName, profileImageUrl } =
-      createUserDto;
-
-    const createUserOptions: admin.auth.CreateRequest = {
-      email,
-      password,
-      displayName: `${firstName} ${lastName}`,
-    };
-    const trimmedPhoto =
-      typeof profileImageUrl === 'string' && profileImageUrl.trim() !== ''
-        ? profileImageUrl.trim()
-        : null;
-
-    // If photoURL is provided, validate it
-    if (trimmedPhoto) {
-      try {
-        new URL(trimmedPhoto);
-        createUserOptions.photoURL = trimmedPhoto;
-      } catch {
-        // Skip photoURL
-      }
-    }
+  async signup(dto: SignUpDto) {
+    const { email, password, firstName, lastName, profileImageUrl } = dto;
 
     let userRecord: admin.auth.UserRecord;
-    let userData: User;
     try {
-      userRecord = await admin.auth().createUser(createUserOptions);
+      userRecord = await admin.auth().createUser({
+        email,
+        password,
+        displayName: `${firstName} ${lastName}`,
+        photoURL: profileImageUrl ?? null,
+      });
     } catch (err) {
-      if (isFirebaseAuthError(err)) {
-        if (err.code === 'auth/email-already-exists') {
-          throw new ConflictException('The email address is already in use');
-        }
-        if (err.code === 'auth/invalid-photo-url') {
-          throw new BadRequestException('Profile image must be a valid URL');
-        }
-      }
-      throw err;
+      handleFirebaseAuthError(err);
     }
 
     try {
@@ -65,21 +39,16 @@ export class AuthService {
         email: userRecord.email || '',
         firstName,
         lastName,
-        photoURL:
-          profileImageUrl && profileImageUrl.trim() !== ''
-            ? profileImageUrl
-            : null,
+        photoURL: profileImageUrl,
         createdAt: new Date(),
         emailVerified: false,
       });
-      userData = user!;
 
-      // Send verification email
       try {
         await this.emailService.sendVerificationLink(email);
-      } catch (emailError: unknown) {
+      } catch (emailErr) {
         throw new BadRequestException(
-          'Failed to send verification email: ' + getErrorMessage(emailError),
+          'Failed to send verification email: ' + getErrorMessage(emailErr),
         );
       }
 
@@ -87,55 +56,20 @@ export class AuthService {
         success: true,
         message:
           'Your account was created. Please check your email for a verification link before signing in.',
-        user: userData,
+        user,
       };
     } catch (err) {
-      await admin.auth().deleteUser(userRecord.uid);
-      await this.userRepository.deleteUser(userRecord.uid);
-
-      if (isFirebaseAuthError(err)) {
-        if (err.code === 'auth/email-already-exists') {
-          throw new ConflictException('The email address is already in use');
-        }
-        if (err.code === 'auth/invalid-photo-url') {
-          throw new BadRequestException('Profile image must be a valid URL');
-        }
-      }
+      await admin
+        .auth()
+        .deleteUser(userRecord.uid)
+        .catch(() => {});
+      await this.userRepository.deleteUser(userRecord.uid).catch(() => {});
       throw err;
     }
   }
 
   async signin(signinDto: SigninDto) {
-    const { token } = signinDto;
-
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const userRecord = await admin.auth().getUser(decodedToken.uid);
-
-    const user = await this.userRepository.getUser(decodedToken.uid);
-
-    let userData: User;
-    if (!user) {
-      userData = {
-        id: decodedToken.uid,
-        email: userRecord.email || '',
-        firstName: userRecord.displayName?.split(' ')[0],
-        lastName: userRecord.displayName?.split(' ')[1],
-        photoURL: userRecord.photoURL,
-        createdAt: new Date(),
-        emailVerified: userRecord.emailVerified,
-      };
-      await this.userRepository.createUser(userData);
-    } else {
-      userData = user;
-
-      // Verify user's email if verified
-      if (userRecord.emailVerified && !user.emailVerified) {
-        await this.userRepository.updateUser(decodedToken.uid, {
-          emailVerified: userRecord.emailVerified,
-        });
-        userData.emailVerified = userRecord.emailVerified;
-      }
-    }
+    const userData = await this.findOrCreateUser(signinDto.token, false);
 
     if (!userData.emailVerified) {
       return {
@@ -145,70 +79,16 @@ export class AuthService {
       };
     }
 
-    return {
-      success: true,
-      message: 'Signin successful',
-      user: userData,
-    };
+    return { success: true, message: 'Signin successful', user: userData };
   }
 
   async signInWithGoogle(signinDto: SigninDto) {
-    const { token } = signinDto;
-
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const userRecord = await admin.auth().getUser(decodedToken.uid);
-
-    const user = await this.userRepository.getUser(decodedToken.uid);
-
-    let userData: User;
-    if (!user) {
-      userData = {
-        id: decodedToken.uid,
-        email: userRecord.email || '',
-        firstName: userRecord.displayName?.split(' ')[0],
-        lastName: userRecord.displayName?.split(' ')[1],
-        photoURL: userRecord.photoURL,
-        createdAt: new Date(),
-        emailVerified: true,
-      };
-      await this.userRepository.createUser(userData);
-    } else {
-      userData = user;
-      if (!userData.emailVerified) {
-        userData.emailVerified = true;
-        await this.userRepository.updateUser(decodedToken.uid, {
-          emailVerified: true,
-        });
-      }
-    }
-
-    return {
-      success: true,
-      message: 'Signin successful',
-      user: userData,
-    };
+    const userData = await this.findOrCreateUser(signinDto.token, true);
+    return { success: true, message: 'Signin successful', user: userData };
   }
 
   async resendVerificationEmail(dto: ForgotPasswordDto) {
-    const { email } = dto;
-    let userRecord: admin.auth.UserRecord;
-    try {
-      userRecord = await admin.auth().getUserByEmail(email);
-    } catch (err) {
-      if (isFirebaseAuthError(err) && err.code === 'auth/user-not-found') {
-        throw new BadRequestException('No account found with this email');
-      }
-      throw err;
-    }
-
-    const hasPassword = userRecord.providerData.some(
-      (p) => p.providerId === 'password',
-    );
-    if (!hasPassword) {
-      throw new BadRequestException(
-        'This account uses Google sign-in. Use "Continue with Google" instead.',
-      );
-    }
+    const userRecord = await this.getPasswordUserByEmail(dto.email);
 
     const user = await this.userRepository.getUser(userRecord.uid);
     if (!user) {
@@ -220,30 +100,77 @@ export class AuthService {
       );
     }
 
-    await this.emailService.sendVerificationLink(email);
+    await this.emailService.sendVerificationLink(dto.email);
     return { ok: true };
   }
 
   async checkEmailForPasswordReset(dto: ForgotPasswordDto) {
-    try {
-      const userRecord = await admin.auth().getUserByEmail(dto.email);
+    await this.getPasswordUserByEmail(dto.email);
+    return { ok: true };
+  }
 
-      // Check if user has a password (email/password provider)
-      const hasPassword = userRecord.providerData.some(
-        (p) => p.providerId === 'password',
-      );
-      if (!hasPassword) {
-        throw new BadRequestException(
-          'This account uses Google sign-in. Use "Continue with Google" instead.',
-        );
-      }
+  /**
+   * Resolves an existing Firestore user or creates one from the Firebase Auth record.
+   * For Google sign-in, email is always marked as verified.
+   */
+  private async findOrCreateUser(
+    token: string,
+    trustEmailVerified: boolean,
+  ): Promise<User> {
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const userRecord = await admin.auth().getUser(decodedToken.uid);
 
-      return { ok: true };
-    } catch (err) {
-      if (isFirebaseAuthError(err) && err.code === 'auth/user-not-found') {
-        throw new BadRequestException('No account found with this email');
+    const existing = await this.userRepository.getUser(decodedToken.uid);
+    if (existing) {
+      const shouldVerify =
+        (trustEmailVerified || userRecord.emailVerified) &&
+        !existing.emailVerified;
+
+      if (shouldVerify) {
+        await this.userRepository.updateUser(decodedToken.uid, {
+          emailVerified: true,
+        });
+        existing.emailVerified = true;
       }
-      throw err;
+      return existing;
     }
+
+    const newUser: User = {
+      id: decodedToken.uid,
+      email: userRecord.email || '',
+      firstName: userRecord.displayName?.split(' ')[0],
+      lastName: userRecord.displayName?.split(' ')[1],
+      photoURL: userRecord.photoURL,
+      createdAt: new Date(),
+      emailVerified: trustEmailVerified || userRecord.emailVerified,
+    };
+    await this.userRepository.createUser(newUser);
+    return newUser;
+  }
+
+  /**
+   * Looks up a Firebase Auth user by email and ensures they use password auth.
+   * Throws on user-not-found or if the account is Google-only.
+   */
+  private async getPasswordUserByEmail(
+    email: string,
+  ): Promise<admin.auth.UserRecord> {
+    let userRecord: admin.auth.UserRecord;
+    try {
+      userRecord = await admin.auth().getUserByEmail(email);
+    } catch (err) {
+      handleFirebaseAuthError(err);
+    }
+
+    const hasPassword = userRecord.providerData.some(
+      (p) => p.providerId === 'password',
+    );
+    if (!hasPassword) {
+      throw new BadRequestException(
+        'This account uses Google sign-in. Use "Continue with Google" instead.',
+      );
+    }
+
+    return userRecord;
   }
 }

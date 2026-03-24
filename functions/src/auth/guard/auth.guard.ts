@@ -17,21 +17,10 @@ export class AuthGuard implements CanActivate {
     }
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
-      request['user'] = decodedToken;
+      request.user = decodedToken;
       return true;
     } catch (error) {
       throw new UnauthorizedException('Invalid token', error as Error);
     }
   }
-}
-
-export interface ReqUser {
-  user: {
-    uid: string;
-    email: string;
-    emailVerified: boolean;
-    displayName: string;
-    photoURL: string;
-    providerId: string;
-  };
 }
